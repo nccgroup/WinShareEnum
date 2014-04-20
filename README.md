@@ -2,10 +2,12 @@ WinShareEnum
 ============
 
 Windows Share Enumerator
+
+download  https://github.com/jonmurrayncc/WinShareEnum/raw/master/Info/WinShareEnum.exe 
   
 A few things:
 	
-		Newest version can always be downloaded from https://github.com/jonmurrayncc/WinShareEnum/raw/master/Info/WinShareEnum.exe 
+		
 		
 		Adding the username as ".\<username>" will authenticate locally instead of on the domain, ie. .\guest will attempt to auth to every server locally as the guest account instead of using <domain>\guest
 		

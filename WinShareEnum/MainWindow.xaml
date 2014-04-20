@@ -1,0 +1,282 @@
+﻿<Window x:Class="WinShareEnum.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Windows Share Enumerator - BETA" Height="732" Width="1111" SizeChanged="Window_SizeChanged" Icon="pack://application:,,,/Resources/NCCG-Icon-[CMYK].ico" >
+
+    <Window.Resources>
+        <LinearGradientBrush x:Key="DefaultTabColor" EndPoint="0.5,1" StartPoint="0.5,0"/>
+        <LinearGradientBrush x:Key="ProgressBarBackground" EndPoint="1,0" StartPoint="0,0">
+            <GradientStop Color="#BABABA" Offset="0"/>
+            <GradientStop Color="#C7C7C7" Offset="0.5"/>
+            <GradientStop Color="#BABABA" Offset="1"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="ProgressBarBorderBrush" EndPoint="0,1" StartPoint="0,0">
+            <GradientStop Color="#B2B2B2" Offset="0"/>
+            <GradientStop Color="#8C8C8C" Offset="1"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="ProgressBarGlassyHighlight" EndPoint="0,1" StartPoint="0,0">
+            <GradientStop Color="#50FFFFFF" Offset="0.5385"/>
+            <GradientStop Color="#00FFFFFF" Offset="0.5385"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="ProgressBarTopHighlight" EndPoint="0,1" StartPoint="0,0">
+            <GradientStop Color="#80FFFFFF" Offset="0.05"/>
+            <GradientStop Color="#00FFFFFF" Offset="0.25"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="ProgressBarIndicatorAnimatedFill" EndPoint="1,0" StartPoint="0,0">
+            <GradientStop Color="#00FFFFFF" Offset="0"/>
+            <GradientStop Color="#60FFFFFF" Offset="0.4"/>
+            <GradientStop Color="#60FFFFFF" Offset="0.6"/>
+            <GradientStop Color="#00FFFFFF" Offset="1"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="ProgressBarIndicatorDarkEdgeLeft" EndPoint="1,0" StartPoint="0,0">
+            <GradientStop Color="#0C000000" Offset="0"/>
+            <GradientStop Color="#20000000" Offset="0.3"/>
+            <GradientStop Color="#00000000" Offset="1"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="ProgressBarIndicatorDarkEdgeRight" EndPoint="1,0" StartPoint="0,0">
+            <GradientStop Color="#00000000" Offset="0"/>
+            <GradientStop Color="#20000000" Offset="0.7"/>
+            <GradientStop Color="#0C000000" Offset="1"/>
+        </LinearGradientBrush>
+        <RadialGradientBrush x:Key="ProgressBarIndicatorLightingEffectLeft" RadiusY="1" RadiusX="1" RelativeTransform="1,0,0,1,0.5,0.5">
+            <GradientStop Color="#60FFFFC4" Offset="0"/>
+            <GradientStop Color="#00FFFFC4" Offset="1"/>
+        </RadialGradientBrush>
+        <LinearGradientBrush x:Key="ProgressBarIndicatorLightingEffect" EndPoint="0,0" StartPoint="0,1">
+            <GradientStop Color="#60FFFFC4" Offset="0"/>
+            <GradientStop Color="#00FFFFC4" Offset="1"/>
+        </LinearGradientBrush>
+        <RadialGradientBrush x:Key="ProgressBarIndicatorLightingEffectRight" RadiusY="1" RadiusX="1" RelativeTransform="1,0,0,1,-0.5,0.5">
+            <GradientStop Color="#60FFFFC4" Offset="0"/>
+            <GradientStop Color="#00FFFFC4" Offset="1"/>
+        </RadialGradientBrush>
+        <LinearGradientBrush x:Key="ProgressBarIndicatorGlassyHighlight" EndPoint="0,1" StartPoint="0,0">
+            <GradientStop Color="#90FFFFFF" Offset="0.5385"/>
+            <GradientStop Color="#00FFFFFF" Offset="0.5385"/>
+        </LinearGradientBrush>
+        <Style x:Key="ProgressBarStyle2" TargetType="{x:Type ProgressBar}">
+            <Setter Property="Foreground" Value="#01D328"/>
+            <Setter Property="Background" Value="{StaticResource ProgressBarBackground}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource ProgressBarBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+        <Style x:Key="ProgressBarStyle1" TargetType="{x:Type ProgressBar}">
+            <Setter Property="Foreground" Value="#01D328"/>
+            <Setter Property="Background" Value="{StaticResource ProgressBarBackground}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource ProgressBarBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ProgressBar}">
+                        <Grid x:Name="TemplateRoot" SnapsToDevicePixels="true">
+                            <Rectangle Fill="{TemplateBinding Background}" RadiusY="2" RadiusX="2"/>
+                            <Border Background="{StaticResource ProgressBarGlassyHighlight}" CornerRadius="2" Margin="1"/>
+                            <Border BorderBrush="#80FFFFFF" BorderThickness="1,0,1,1" Background="{StaticResource ProgressBarTopHighlight}" Margin="1"/>
+                            <Rectangle x:Name="PART_Track" Margin="1"/>
+                            <Decorator x:Name="PART_Indicator" HorizontalAlignment="Left" Margin="1">
+                                <Grid x:Name="Foreground">
+                                    <Rectangle x:Name="Indicator" Fill="{TemplateBinding Foreground}"/>
+                                    <Grid x:Name="Animation" ClipToBounds="true">
+                                        <Rectangle x:Name="PART_GlowRect" Fill="{StaticResource ProgressBarIndicatorAnimatedFill}" HorizontalAlignment="Left" Margin="-100,0,0,0" Width="100"/>
+                                    </Grid>
+                                    <Grid x:Name="Overlay">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition MaxWidth="15"/>
+                                            <ColumnDefinition Width="0.1*"/>
+                                            <ColumnDefinition MaxWidth="15"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition/>
+                                            <RowDefinition/>
+                                        </Grid.RowDefinitions>
+                                        <Rectangle x:Name="LeftDark" Fill="{StaticResource ProgressBarIndicatorDarkEdgeLeft}" Margin="1,1,0,1" RadiusY="1" RadiusX="1" Grid.RowSpan="2"/>
+                                        <Rectangle x:Name="RightDark" Grid.Column="2" Fill="{StaticResource ProgressBarIndicatorDarkEdgeRight}" Margin="0,1,1,1" RadiusY="1" RadiusX="1" Grid.RowSpan="2"/>
+                                        <Rectangle x:Name="LeftLight" Grid.Column="0" Fill="{StaticResource ProgressBarIndicatorLightingEffectLeft}" Grid.Row="2"/>
+                                        <Rectangle x:Name="CenterLight" Grid.Column="1" Fill="{StaticResource ProgressBarIndicatorLightingEffect}" Grid.Row="2"/>
+                                        <Rectangle x:Name="RightLight" Grid.Column="2" Fill="{StaticResource ProgressBarIndicatorLightingEffectRight}" Grid.Row="2"/>
+                                        <Border x:Name="Highlight1" Background="{StaticResource ProgressBarIndicatorGlassyHighlight}" Grid.ColumnSpan="3" Grid.RowSpan="2"/>
+                                        <Border x:Name="Highlight2" Background="{StaticResource ProgressBarTopHighlight}" Grid.ColumnSpan="3" Grid.RowSpan="2"/>
+                                    </Grid>
+                                </Grid>
+                            </Decorator>
+                            <Border BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="2"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="Orientation" Value="Vertical">
+                                <Setter Property="LayoutTransform" TargetName="TemplateRoot">
+                                    <Setter.Value>
+                                        <RotateTransform Angle="-90"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsIndeterminate" Value="true">
+                                <Setter Property="Visibility" TargetName="LeftDark" Value="Collapsed"/>
+                                <Setter Property="Visibility" TargetName="RightDark" Value="Collapsed"/>
+                                <Setter Property="Visibility" TargetName="LeftLight" Value="Collapsed"/>
+                                <Setter Property="Visibility" TargetName="CenterLight" Value="Collapsed"/>
+                                <Setter Property="Visibility" TargetName="RightLight" Value="Collapsed"/>
+                                <Setter Property="Visibility" TargetName="Indicator" Value="Collapsed"/>
+                            </Trigger>
+                            <Trigger Property="IsIndeterminate" Value="false">
+                                <Setter Property="Background" TargetName="Animation" Value="#00000000"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="alternatingListViewItemStyle" TargetType="{x:Type ListViewItem}">
+            <Style.Triggers>
+                <!-- setting up triggers for alternate background colors -->
+                <Trigger Property="ItemsControl.AlternationIndex" Value="1">
+                    <Setter Property="Background" Value="#FFE8E8E8"></Setter>
+                    <Setter Property="Foreground" Value="Black"></Setter>
+                </Trigger>
+                <Trigger Property="ItemsControl.AlternationIndex" Value="0">
+                    <Setter Property="Background" Value="White"></Setter>
+                    <Setter Property="Foreground" Value="Black"></Setter>
+                </Trigger>
+            </Style.Triggers>
+            <!-- setting row height here -->
+            <Setter Property="Height" Value="30" />
+        </Style>
+    </Window.Resources>
+
+    <Grid Background="#FFFBFBFB">
+        <Menu Height="30" VerticalAlignment="Top" Background="{x:Null}">
+            <MenuItem Header="File" IsTabStop="False"  >
+                <MenuItem x:Name="mi_CopyResultsPane" Header="Copy Results                            " HorizontalAlignment="Left" Width="275" Click="mi_CopyResultsPane_Click" />
+                <MenuItem x:Name="mi_copyAllSharesandPerms" Header="Copy All Shares and Permissions" HorizontalAlignment="Left" Width="275" Click="mi_copyAllSharesandPerms_Click" />
+                <MenuItem x:Name="mi_copyEveryoneShares" Click="mi_copyEveryoneShares_Click" Header="Copy List of Shares (everyone)" HorizontalAlignment="Left" Width="275" />
+                <MenuItem x:Name="mi_CopyLog" Header="Copy Log" HorizontalAlignment="Left" Width="275" Click="mi_CopyLog_Click" />
+            </MenuItem>
+            <MenuItem x:Name="mi_Options" Header="Options" Click="mi_Options_Click" IsTabStop="False"  />
+            <MenuItem Header="About" IsTabStop="False">
+                <MenuItem x:Name="mi_version" Header="Version" HorizontalAlignment="Left" Width="200" Click="mi_version_Click"/>
+                <MenuItem x:Name="mi_updateRules" Header="Update rules" HorizontalAlignment="Left" Width="200" Click="mi_updateRules_Click" />
+                <MenuItem x:Name="mi_checkAppUpdates" Header="Update Application" HorizontalAlignment="Left" Width="200" Click="mi_checkAppUpdates_Click" />
+            </MenuItem>
+        </Menu>
+
+
+        <Grid Height="30" Margin="159,0,0,0" VerticalAlignment="Top">
+            <Menu Margin="-10,0,0,0" >
+                <!--blank menu just so i don't have to faff with the red on the other-->
+                <Menu.Background>
+                    <ImageBrush ImageSource="Resources/header-long.png" Opacity="0.2" Stretch="None" TileMode="Tile"/>
+                </Menu.Background>
+
+            </Menu>
+
+        </Grid>
+
+        <Grid  Margin="10,35,10,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition Width="1082*"/>
+            </Grid.ColumnDefinitions>
+            <TreeView x:Name="treeviewMain" HorizontalAlignment="Left" Margin="9.075,10,0,29" Width="330" SelectedItemChanged="treeviewMain_SelectedItemChanged" BorderBrush="LightGray" IsTabStop="False" Grid.Column="1"/>
+            <TextBox TabIndex="1" x:Name="tbUsername" TextChanged="tbUsername_TextChanged" GotFocus="tbUsername_GotFocus" Margin="0,59,21,0" HorizontalAlignment="Right" Width="184" Height="28" VerticalAlignment="Top" LostFocus="tbUsername_LostFocus" BorderBrush="LightGray" Grid.Column="1" />
+            <PasswordBox TabIndex="2" x:Name="tbPassword"  PasswordChanged="tbPassword_PasswordChanged" GotFocus="tbPassword_GotFocus" Margin="0,97,21,0" Height="29" VerticalAlignment="Top" HorizontalAlignment="Right" Width="141"  LostFocus="tbPassword_LostFocus" BorderBrush="LightGray" Grid.Column="1"/>
+
+
+            <TextBox x:Name="tbIPRange" Height="24" Margin="0,25,21,0" TextWrapping="Wrap" Text="10.1.2.3-250" VerticalAlignment="Top" TextAlignment="Right"  HorizontalAlignment="Right"  Width="108" Grid.Column="1"/>
+
+
+            <Button x:Name="btnGO" Content="GO" Height="29" Margin="0,97,167,0" VerticalAlignment="Top" Click="btnGO_Click" HorizontalAlignment="Right" Width="38" Style="{StaticResource
+                {x:Static ToolBar.ButtonStyleKey}}" Background="{x:Null}" BorderBrush="Black" FontSize="11" FontWeight="Bold" Opacity="0.8" IsTabStop="False" Grid.Column="1">
+            </Button>
+            <ProgressBar x:Name="pgbMain" Margin="371.075,0,21,10" Maximum="100" Visibility="Hidden" Height="14" VerticalAlignment="Bottom" Background="DarkGray" Foreground="#FFFF1C04" BorderThickness="0" Style="{DynamicResource ProgressBarStyle1}" Opacity="0.8" Grid.Column="1">
+                <ProgressBar.BorderBrush>
+                    <LinearGradientBrush EndPoint="0,1" StartPoint="0,0">
+                        <GradientStop Color="#FFB2B2B2" Offset="0"/>
+                        <GradientStop Color="White" Offset="1"/>
+                    </LinearGradientBrush>
+                </ProgressBar.BorderBrush>
+
+            </ProgressBar>
+            <ListBox x:Name="lbLog" Margin="371.075,0,21,29" ScrollViewer.VerticalScrollBarVisibility="Auto" Height="95" VerticalAlignment="Bottom" BorderBrush="LightGray" Grid.Column="1" IsTabStop="False"/>
+            <CheckBox x:Name="checkbox_Null"  Height="24" Margin="0,25,134,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="71" IsChecked="True" Checked="checkbox_Null_Checked" Unchecked="checkbox_Null_Unchecked" Grid.Column="1" IsTabStop="False">
+                <TextBlock FontSize="10" Height="33"><Run Text="Use NULL"/><LineBreak/><Run Text="Session"/></TextBlock>
+            </CheckBox>
+
+            <CheckBox Margin="0,0,21,124" IsChecked="True" Checked="CheckBox_Checked" Unchecked="CheckBox_Unchecked" HorizontalAlignment="Right" Width="80" Height="16" VerticalAlignment="Bottom" Grid.Column="1" IsTabStop="False">
+                <TextBlock Margin="0,-2,0,0" FontSize="12" Height="24"><Run Text="Auto scroll"/></TextBlock>
+            </CheckBox>
+            <Button x:Name="btnFindInterestingFiles" Content="Find Interesting Files" Height="28" Margin="371.075,21,0,0" VerticalAlignment="Top" Click="btFindInterestingFiles_Click" HorizontalAlignment="Left" Width="128" Style="{StaticResource
+                {x:Static ToolBar.ButtonStyleKey}}" Background="{x:Null}" BorderBrush="Black" FontSize="12" Opacity="0.8" IsEnabled="False" IsTabStop="False" Grid.Column="1"/>
+            <Button x:Name="btnGrepFiles" Content="Inspect File Contents" Height="28" Margin="371.075,54,0,0" VerticalAlignment="Top" Click="btnGrepFiles_Click" HorizontalAlignment="Left" Width="128"  Style="{StaticResource
+                {x:Static ToolBar.ButtonStyleKey}}" Background="{x:Null}" BorderBrush="Black" FontSize="12" Opacity="0.8" IsEnabled="False" IsTabStop="False" Grid.Column="1"/>
+            <GroupBox x:Name="gb_EnumResults" Header="File Enumeration Results" Margin="371.075,131,21,149" Grid.Column="1">
+                <ListView Name="lv_resultsList" ItemContainerStyle="{StaticResource alternatingListViewItemStyle}" AlternationCount="2" Margin="0,4,0,0"  >
+                    <ListView.View>
+                        <GridView x:Name="gvtest">
+                            <GridViewColumn Header="Name" Width="100"  DisplayMemberBinding="{Binding Name}"/>
+                            <GridViewColumn Header="Comment" Width="200" DisplayMemberBinding="{Binding Comment}" />
+                            <GridViewColumn Header="Download to Desktop" Width="150"   >
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Width="150" Content="Download" Click="download_file" CommandParameter="{Binding}" Style="{StaticResource
+                {x:Static ToolBar.ButtonStyleKey}}" Background="LightGray" BorderBrush="DarkGray" IsTabStop="False"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="Path" Width="auto"  DisplayMemberBinding="{Binding Path}" />
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+
+            </GroupBox>
+            <Button x:Name="btn_Stop" Content="STOP" Height="29" Margin="0,97,167,0" VerticalAlignment="Top" Click="btn_Stop_Click" HorizontalAlignment="Right" Width="38" Visibility="Hidden" Style="{StaticResource
+                {x:Static ToolBar.ButtonStyleKey}}" Background="{x:Null}" BorderBrush="Black" FontSize="11" FontWeight="Bold" Opacity="0.8" Grid.Column="1"/>
+
+            <Button x:Name="btn_StopInteresting" Content="STOP" Height="28" Margin="371,21,0,0" VerticalAlignment="Top" Click="btn_Stop_Click" HorizontalAlignment="Left" Width="128" Visibility="Hidden" Style="{StaticResource
+                {x:Static ToolBar.ButtonStyleKey}}" Background="{x:Null}" BorderBrush="Black" FontSize="11" FontWeight="Bold" Opacity="0.8" Grid.Column="1"/>
+
+            <Button x:Name="btn_StopGrep" Content="STOP" Height="28" Margin="371,54,0,0" VerticalAlignment="Top" Click="btn_Stop_Click" HorizontalAlignment="Left" Width="128" Visibility="Hidden" Style="{StaticResource
+                {x:Static ToolBar.ButtonStyleKey}}" Background="{x:Null}" BorderBrush="Black" FontSize="11" FontWeight="Bold" Opacity="0.8" Grid.Column="1"/>
+
+
+            <TextBox  Background="#FFF5F5F5" x:Name="tb_SelectedSharePerms" Height="105" Margin="511.075,21,223,0" TextWrapping="Wrap" Text="Selected Share Permissions..." VerticalAlignment="Top" IsEnabled="False" IsReadOnly="True" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" Grid.Column="1" IsTabStop="False" />
+            <Label x:Name="lbl_fileCount" Content="" HorizontalAlignment="Left"  Height="24" Margin="371.075,92,0,0" VerticalAlignment="Top" Width="128" Grid.Column="1"/>
+
+
+            <!--
+        
+        show if you have read access write access or full access
+        search string box
+        
+        options :: username
+        options :: password
+        options :: domain ?
+        options :: max threads
+        options :: max file size
+        options :: IP ranges
+        
+        todo: make listbox nice and pretty...
+        
+        file :: enumerate shares
+        file :: search shares I have access to...
+        file :: copy all shares and permissions to clipboard
+        
+        right click :: search specified share 
+        
+        double click on a file dumps the output to the textbox
+        right click file opens with notepad locally
+        double click on the share types the ACLs to the textbox
+        
+        make a cancel button and load bar
+        
+        everyone has read access = yellow
+        everyone has read/write or full access = red
+        options :: log level (info, error)
+        
+        -->
+
+        </Grid>
+    </Grid>
+
+</Window>
+
+
