@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -549,7 +549,7 @@ namespace WinShareEnum
             catch (Exception ex)
             {
 
-                if (ex.InnerException.Message == "The operation was canceled.")
+                if (ex.InnerException != null && ex.InnerException.Message != null && ex.InnerException.Message == "The operation was canceled.")
                 {
                     addLog("Threads dead, baby. Threads dead.", true);
                     btn_Stop.Visibility = System.Windows.Visibility.Hidden;
@@ -655,7 +655,7 @@ namespace WinShareEnum
 
             catch (Exception ex)
             {
-                if (ex.InnerException.Message == "The operation was canceled.")
+                if (ex.InnerException != null && ex.InnerException.Message != null && ex.InnerException.Message == "The operation was canceled.")
                 {
 
                     addLog("Threads dead, baby. Threads dead.", true);
@@ -742,7 +742,7 @@ namespace WinShareEnum
 
             catch (Exception ex)
             {
-                if (ex.InnerException.Message == "The operation was canceled.")
+                if (ex.InnerException != null && ex.InnerException.Message != null && ex.InnerException.Message == "The operation was canceled.")
                 {
                     addLog("Threads dead, baby. Threads dead.", true);
                     //reset file dict
