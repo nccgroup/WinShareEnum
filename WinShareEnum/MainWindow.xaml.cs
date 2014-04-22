@@ -1388,7 +1388,7 @@ namespace WinShareEnum
             try
             {
                 FileInfo fi = new FileInfo(filePath);
-                if (fi.Length <= MAX_FILESIZE)
+                if (fi.Length <= MAX_FILESIZE * 1024)
                 {
                     if (includeBinaryFiles == false)
                     {
