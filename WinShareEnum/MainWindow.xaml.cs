@@ -59,7 +59,7 @@ namespace WinShareEnum
 
         public static ConcurrentQueue<string> loglist;
         public static ConcurrentDictionary<string, List<shareStruct>> all_readable_shares = new ConcurrentDictionary<string, List<shareStruct>>();
-        public static ConcurrentDictionary<string, List<string>> all_readable_files = new ConcurrentDictionary<string, List<string>>();
+        public static ConcurrentDictionary<string, Dictionary<string, List<string>>> all_readable_files = new ConcurrentDictionary<string, Dictionary<string, List<string>>>();
         public ConcurrentBag<string> all_interesting_files = new ConcurrentBag<string>();
 
         public enum GenericRights : uint
@@ -186,7 +186,7 @@ namespace WinShareEnum
         private void resetGUI()
         {
             all_readable_shares = new ConcurrentDictionary<string, List<shareStruct>>();
-            all_readable_files = new ConcurrentDictionary<string, List<string>>();
+            all_readable_files = new ConcurrentDictionary<string, Dictionary<string, List<string>>>();
             all_interesting_files = new ConcurrentBag<string>();
             btnFindInterestingFiles.IsEnabled = false;
             btnGrepFiles.IsEnabled = false;
@@ -647,7 +647,7 @@ namespace WinShareEnum
             {
                 addLog("Threads dead, baby. Threads dead.", true);
                 //reset file dict
-                all_readable_files = new ConcurrentDictionary<string, List<string>>();
+                all_readable_files = new ConcurrentDictionary<string, Dictionary<string, List<string>>>();
 
                 btn_StopInteresting.Visibility = System.Windows.Visibility.Hidden;
                 btnFindInterestingFiles.Visibility = System.Windows.Visibility.Visible;
@@ -664,7 +664,7 @@ namespace WinShareEnum
 
                     addLog("Threads dead, baby. Threads dead.", true);
                     //reset file dict
-                    all_readable_files = new ConcurrentDictionary<string, List<string>>();
+                    all_readable_files = new ConcurrentDictionary<string, Dictionary<string, List<string>>>();
                     btnFindInterestingFiles.IsEnabled = true;
                     btn_StopInteresting.Visibility = System.Windows.Visibility.Hidden;
                     btnFindInterestingFiles.Visibility = System.Windows.Visibility.Visible;
@@ -735,7 +735,7 @@ namespace WinShareEnum
 
                 addLog("Threads dead, baby. Threads dead.", true);
                 //reset file dict
-                all_readable_files = new ConcurrentDictionary<string, List<string>>();
+                all_readable_files = new ConcurrentDictionary<string, Dictionary<string, List<string>>>();
                 //todo: change
                 btn_StopGrep.Visibility = System.Windows.Visibility.Hidden;
                 btnGrepFiles.Visibility = Visibility.Visible;
@@ -750,7 +750,7 @@ namespace WinShareEnum
                 {
                     addLog("Threads dead, baby. Threads dead.", true);
                     //reset file dict
-                    all_readable_files = new ConcurrentDictionary<string, List<string>>();
+                    all_readable_files = new ConcurrentDictionary<string, Dictionary<string, List<string>>>();
                     //todo: change
                     btn_StopGrep.Visibility = System.Windows.Visibility.Hidden;
                     btnGrepFiles.Visibility = Visibility.Visible;
@@ -1471,23 +1471,31 @@ namespace WinShareEnum
         }
                   
     
-
+        //needs updating
         private List<string> getAllFilesOnShare(string sharepath)
         {
             List<string> recursiveList = new List<string>();
+            string server = sharepath.Split('\\')[0];
+            string share = sharepath.Split('\\')[1];
 
-            if (all_readable_files.Keys.Count == 0) //enumerate all files if  needed
+            if (!all_readable_files.ContainsKey(server))
             {
-                Dispatcher.Invoke((Action)delegate { addLog("Enumerating all files on " + sharepath + " this may take a while..."); });
-                recursiveList = getDirectoryFilesRecursive(@"\\" + sharepath).ToList<string>();
-                Dispatcher.Invoke((Action)delegate { addLog("Finished enumerating files on " + sharepath); });
-                all_readable_files.AddOrUpdate(sharepath.Split('\\')[0], recursiveList, (key, oldVal) => recursiveList);
+                all_readable_files.TryAdd(server, new Dictionary<string, List<string>>());
             }
+                if (!all_readable_files[server].ContainsKey(share))
+                {
+                    Dispatcher.Invoke((Action)delegate { addLog("Enumerating all files on " + sharepath + " this may take a while..."); });
+                    recursiveList = getDirectoryFilesRecursive(@"\\" + sharepath).ToList<string>();
+                    Dispatcher.Invoke((Action)delegate { addLog("Finished enumerating files on " + sharepath); });
+                    all_readable_files[server][share] = recursiveList;
+
+                }
+       
             else   //do not need to enumerate all files if we have a list already
             {
-                if (all_readable_files.ContainsKey(sharepath.Split('\\')[0]))
+                if (all_readable_files[server].ContainsKey(share))
                 {
-                    recursiveList = all_readable_files[sharepath.Split('\\')[0]];
+                    recursiveList = all_readable_files[server][share];
                 }
             }
 
