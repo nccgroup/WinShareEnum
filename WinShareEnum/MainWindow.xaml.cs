@@ -637,6 +637,10 @@ namespace WinShareEnum
                 finalInteresting = new ConcurrentBag<bool>();
 
                 addLog("Searching for interesting files complete.");
+                btnFindInterestingFiles.IsEnabled = true;
+                btn_StopInteresting.IsEnabled = false;
+                btn_StopInteresting.Visibility = System.Windows.Visibility.Hidden;
+                btnFindInterestingFiles.Visibility = System.Windows.Visibility.Visible;
             }
 
             catch (OperationCanceledException)
@@ -647,7 +651,7 @@ namespace WinShareEnum
 
                 btn_StopInteresting.Visibility = System.Windows.Visibility.Hidden;
                 btnFindInterestingFiles.Visibility = System.Windows.Visibility.Visible;
-                btn_StopInteresting.IsEnabled = true;
+                btn_StopInteresting.IsEnabled = false;
                 btnFindInterestingFiles.IsEnabled = true;
                 pgbMain.Visibility = System.Windows.Visibility.Hidden;
                 return;
@@ -769,6 +773,9 @@ namespace WinShareEnum
                 }
             }
             btnGrepFiles.IsEnabled = true;
+            btn_StopGrep.IsEnabled = false;
+            btn_StopGrep.Visibility = System.Windows.Visibility.Hidden;
+            btnGrepFiles.Visibility = Visibility.Visible;
         }
 
         private void mi_copyAllSharesandPerms_Click(object sender, RoutedEventArgs e)
@@ -1666,9 +1673,10 @@ namespace WinShareEnum
         /// <param name="path"></param>
         private void isFilterMatch(string line, string path)
         {
+            string lowered = line.ToLower();
             foreach (string fileFilter in fileContentsFilters)
             {
-                string lowered = line.ToLower();
+            
                 if (fileFilter.StartsWith("###"))
                 {
                     if (System.Text.RegularExpressions.Regex.IsMatch(lowered, fileFilter.TrimStart('#').ToLower()) == true)

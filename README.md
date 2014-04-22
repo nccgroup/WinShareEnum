@@ -20,7 +20,7 @@ A few things:
 			Download 4.5 from  http://www.microsoft.com/en-gb/download/details.aspx?id=30653
 
 		clicking download a file will download it to the desktop, this WILL overwrite.
-		shares coloured red are readable by everyone, blue are readable by the current user. 
+		shares coloured red are readable by everyone, blue are readable by the current user.
 		
 		if there are any file filters that are missing (there are probably a lot) or good regular expressions used, please email me (click about --> version for my address) so i can update the standard list. likewise for bugs.
 		
