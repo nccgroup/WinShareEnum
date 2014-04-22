@@ -3,7 +3,7 @@ WinShareEnum
 
 Windows Share Enumerator
 
-download  https://github.com/nccgroup/WinShareEnum/blob/master/Info/WinShareEnum.exe
+download  https://github.com/nccgroup/WinShareEnum/raw/master/Info/WinShareEnum.exe
   
 A few things:
 	
