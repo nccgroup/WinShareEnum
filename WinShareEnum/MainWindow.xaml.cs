@@ -883,6 +883,89 @@ namespace WinShareEnum
             Clipboard.SetText(sb.ToString());
         }
 
+        private void mi_version_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBox.Show("Windows Share Enumerator\r\nVersion: " + updates.getCurrentVersion().ToString() + "\r\nJonathan.Murray@nccgroup.com", "About", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private void mi_updateRules_Click(object sender, RoutedEventArgs e)
+        {
+            int count = 0;
+            try
+            {
+                List<string> fileFilterUpdates = updates.getFileFilterUpdates();
+                foreach (string update in fileFilterUpdates)
+                {
+                    if (!Settings.Default.FileContentRules.Contains(update) && update != "")
+                    {
+                        Settings.Default.FileContentRules.Add(update);
+                        count++;
+                        addLog("Added file filter rule " + update);
+                    }
+                }
+
+                Settings.Default.Save();
+
+                List<string> interestingUpdates = updates.getInterestingFileUpdates();
+                foreach (string update in interestingUpdates)
+                {
+                    if (!Settings.Default.interestingFileNameRules.Contains(update) && update != "")
+                    {
+                        Settings.Default.interestingFileNameRules.Add(update);
+                        count++;
+                        addLog("Added interesting file rule " + update);
+                    }
+                }
+
+                Settings.Default.Save();
+                MessageBox.Show("Rules update complete. " + count + " new rules added.", "Update", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error updating rules. " + ex.Message, "Update Rules Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                addLog("Error " + ex.Message + " -- " + ex.StackTrace);
+            }
+
+
+
+        }
+
+        private void mi_checkAppUpdates_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (updates.getCurrentVersion() < updates.getLatestVersion())
+                {
+                    MessageBoxResult mbr = MessageBox.Show("New version available, want to download it? \r\n\r\nNote: this will download to desktop and overwrite..", "Update", MessageBoxButton.YesNo, MessageBoxImage.Information);
+
+                    if (mbr == MessageBoxResult.Yes)
+                    {
+                        try
+                        {
+                            addLog("Downloading most recent version to desktop..");
+                            updates.downloadUpdate();
+                            addLog(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "\\WinShareEnum.exe downloaded.");
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show("Error: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            addLog("Error " + ex.Message + " -- " + ex.StackTrace);
+                        }
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("No New Version Available", "Update", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error getting current version. " + ex.Message, "Update Rules Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                addLog("Error " + ex.Message + " -- " + ex.StackTrace);
+            }
+        }
+
         #endregion
 
         #region core share enumeration
@@ -1490,6 +1573,7 @@ namespace WinShareEnum
 
         #endregion
 
+        #region misc
 
         /// <summary>
         /// checks to see if a given filename is "interesting" or not, doesnt return a value as everything is stored in the results pane anyway
@@ -1621,98 +1705,15 @@ namespace WinShareEnum
 
             return oNetworkCredential;
         }
-
-        private void mi_version_Click(object sender, RoutedEventArgs e)
-        {
-            MessageBox.Show("Windows Share Enumerator\r\nVersion: " + updates.getCurrentVersion().ToString() + "\r\nJonathan.Murray@nccgroup.com", "About", MessageBoxButton.OK, MessageBoxImage.Information);
-        }
-
-        private void mi_updateRules_Click(object sender, RoutedEventArgs e)
-        {
-            int count = 0;
-            try
-            {
-                List<string> fileFilterUpdates = updates.getFileFilterUpdates();
-                foreach(string update in fileFilterUpdates)
-                {
-                    if (!Settings.Default.FileContentRules.Contains(update) && update != "")
-                    {
-                        Settings.Default.FileContentRules.Add(update);
-                        count++;
-                        addLog("Added file filter rule " + update);
-                    }
-                }
-
-                Settings.Default.Save();
-
-                List<string> interestingUpdates = updates.getInterestingFileUpdates();
-                foreach (string update in interestingUpdates)
-                {
-                    if (!Settings.Default.interestingFileNameRules.Contains(update) && update != "")
-                    {
-                        Settings.Default.interestingFileNameRules.Add(update);
-                        count++;
-                        addLog("Added interesting file rule " + update);
-                    }
-                }
-
-                Settings.Default.Save();
-                MessageBox.Show("Rules update complete. " + count + " new rules added.", "Update", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error updating rules. " + ex.Message, "Update Rules Failed", MessageBoxButton.OK, MessageBoxImage.Error);
-                addLog("Error " + ex.Message + " -- " + ex.StackTrace);
-            }
-
-
-       
-        }
-
-        private void mi_checkAppUpdates_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                if (updates.getCurrentVersion() < updates.getLatestVersion())
-                {
-                    MessageBoxResult mbr = MessageBox.Show("New version available, want to download it? \r\n\r\nNote: this will download to desktop and overwrite..", "Update", MessageBoxButton.YesNo, MessageBoxImage.Information);
-
-                    if (mbr == MessageBoxResult.Yes)
-                    {
-                        try
-                        {
-                            addLog("Downloading most recent version to desktop..");
-                            updates.downloadUpdate();
-                            addLog(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "\\WinShareEnum.exe downloaded.");
-                        }
-                        catch (Exception ex)
-                        {
-                            MessageBox.Show("Error: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                            addLog("Error " + ex.Message + " -- " + ex.StackTrace);
-                        }
-                    }
-                }
-                else
-                {
-                    MessageBox.Show("No New Version Available", "Update", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-            }
-
-            catch (Exception ex)
-            {
-                MessageBox.Show("Error getting current version. " + ex.Message, "Update Rules Failed", MessageBoxButton.OK, MessageBoxImage.Error);
-                addLog("Error " + ex.Message + " -- " + ex.StackTrace);
-            }
-        }
-
-
+        
         private void resetTokens()
         {
             _cancellationToken = new CancellationTokenSource();
             _parallelOption = new ParallelOptions { MaxDegreeOfParallelism = 30, CancellationToken = _cancellationToken.Token };
         }
 
-   
+        #endregion
+
     }
 
 

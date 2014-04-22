@@ -530,18 +530,18 @@ namespace WinShareEnum
 
         public static List<string> getInterestingFileUpdates()
         {
-            return readFromSite(new Uri("https://raw.githubusercontent.com/jonmurrayncc/WinShareEnum/master/Info/interestingFiles.txt"));
+            return readFromSite(new Uri("https://raw.githubusercontent.com/nccgroup/WinShareEnum/master/Info/interestingFiles.txt"));
             
         }
 
         public static List<string>getFileFilterUpdates()
         {
-            return readFromSite(new Uri("https://raw.githubusercontent.com/jonmurrayncc/WinShareEnum/master/Info/filterRules.txt"));
+            return readFromSite(new Uri("https://raw.githubusercontent.com/nccgroup/WinShareEnum/master/Info/filterRules.txt"));
         }
         
         public static double getLatestVersion()
         {
-            return double.Parse(readFromSite(new Uri("https://raw.githubusercontent.com/jonmurrayncc/WinShareEnum/master/Info/version.txt"))[0]);                    
+            return double.Parse(readFromSite(new Uri("https://raw.githubusercontent.com/nccgroup/WinShareEnum/master/Info/version.txt"))[0]);                    
         }
         
 
@@ -554,7 +554,7 @@ namespace WinShareEnum
                 throw new Exception("File exists on desktop already, delete it.");
             }
 
-            client.DownloadFile("https://github.com/jonmurrayncc/WinShareEnum/raw/master/Info/WinShareEnum.exe", Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "\\WinShareEnum.exe");
+            client.DownloadFile("https://github.com/nccgroup/WinShareEnum/raw/master/Info/WinShareEnum.exe", Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "\\WinShareEnum.exe");
 
         }
 
