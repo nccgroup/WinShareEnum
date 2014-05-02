@@ -146,9 +146,12 @@
     <Grid Background="#FFFBFBFB">
         <Menu Height="30" VerticalAlignment="Top" Background="{x:Null}">
             <MenuItem Header="File" IsTabStop="False"  >
+                <MenuItem x:Name="mi_importIPs" Header="Import List of IPs to Scan" HorizontalAlignment="Left" Width="275" Click="mi_importIPs_Click" />
+                <Separator></Separator>
                 <MenuItem x:Name="mi_CopyResultsPane" Header="Copy Results                            " HorizontalAlignment="Left" Width="275" Click="mi_CopyResultsPane_Click" />
                 <MenuItem x:Name="mi_copyAllSharesandPerms" Header="Copy All Shares and Permissions" HorizontalAlignment="Left" Width="275" Click="mi_copyAllSharesandPerms_Click" />
                 <MenuItem x:Name="mi_copyEveryoneShares" Click="mi_copyEveryoneShares_Click" Header="Copy List of Shares (everyone)" HorizontalAlignment="Left" Width="275" />
+                <Separator></Separator>
                 <MenuItem x:Name="mi_CopyLog" Header="Copy Log" HorizontalAlignment="Left" Width="275" Click="mi_CopyLog_Click" />
             </MenuItem>
             <MenuItem x:Name="mi_Options" Header="Options" Click="mi_Options_Click" IsTabStop="False"  />
@@ -181,7 +184,7 @@
             <PasswordBox TabIndex="2" x:Name="tbPassword"  PasswordChanged="tbPassword_PasswordChanged" GotFocus="tbPassword_GotFocus" Margin="0,97,21,0" Height="29" VerticalAlignment="Top" HorizontalAlignment="Right" Width="141"  LostFocus="tbPassword_LostFocus" BorderBrush="LightGray" Grid.Column="1"/>
 
 
-            <TextBox x:Name="tbIPRange" Height="24" Margin="0,25,21,0" TextWrapping="Wrap" Text="10.1.2.3-250" VerticalAlignment="Top" TextAlignment="Right"  HorizontalAlignment="Right"  Width="108" Grid.Column="1"/>
+            <TextBox x:Name="tbIPRange" Height="24" Margin="0,25,21,0" TextWrapping="Wrap" Text="10.1.2.3-250" VerticalAlignment="Top" TextAlignment="Right"  HorizontalAlignment="Right"  Width="108" Grid.Column="1" TextChanged="tbIPRange_TextChanged"/>
 
 
             <Button x:Name="btnGO" Content="GO" Height="29" Margin="0,97,167,0" VerticalAlignment="Top" Click="btnGO_Click" HorizontalAlignment="Right" Width="38" Style="{StaticResource
@@ -209,7 +212,7 @@
             <Button x:Name="btnGrepFiles" Content="Inspect File Contents" Height="28" Margin="371.075,54,0,0" VerticalAlignment="Top" Click="btnGrepFiles_Click" HorizontalAlignment="Left" Width="128"  Style="{StaticResource
                 {x:Static ToolBar.ButtonStyleKey}}" Background="{x:Null}" BorderBrush="Black" FontSize="12" Opacity="0.8" IsEnabled="False" IsTabStop="False" Grid.Column="1"/>
             <GroupBox x:Name="gb_EnumResults" Header="File Enumeration Results" Margin="371.075,131,21,149" Grid.Column="1">
-                <ListView Name="lv_resultsList" ItemContainerStyle="{StaticResource alternatingListViewItemStyle}" AlternationCount="2" Margin="0,4,0,0"  >
+                <ListView Name="lv_resultsList" ItemContainerStyle="{StaticResource alternatingListViewItemStyle}" AlternationCount="2" Margin="0,4,0,0" >
                     <ListView.View>
                         <GridView x:Name="gvtest">
                             <GridViewColumn Header="Name" Width="100"  DisplayMemberBinding="{Binding Name}"/>
@@ -240,6 +243,7 @@
 
             <TextBox  Background="#FFF5F5F5" x:Name="tb_SelectedSharePerms" Height="105" Margin="511.075,21,223,0" TextWrapping="Wrap" Text="Selected Share Permissions..." VerticalAlignment="Top" IsEnabled="False" IsReadOnly="True" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" Grid.Column="1" IsTabStop="False" />
             <Label x:Name="lbl_fileCount" Content="" HorizontalAlignment="Left"  Height="24" Margin="371.075,92,0,0" VerticalAlignment="Top" Width="128" Grid.Column="1"/>
+            <Button x:Name="btn_clearResults" Content="Clear Results" Height="16" Margin="371,0,0,129" VerticalAlignment="Bottom" HorizontalAlignment="Left" Width="128"  Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" Background="{x:Null}" BorderBrush="LightGray" FontSize="8" Opacity="0.8" IsEnabled="True" IsTabStop="False" Grid.Column="1" Click="btn_clearResults_Click"/>
 
 
             <!--

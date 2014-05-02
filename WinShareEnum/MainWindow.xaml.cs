@@ -44,6 +44,7 @@ namespace WinShareEnum
         public static bool optionsOpen = false;
         public static bool autoScroll = true;
         public static bool includeBinaryFiles = false;
+        public static bool useImportedIPs = false;
 
         public const int ICON_HEIGHT = 15;
         public const int ICON_WIDTH = 18;
@@ -61,6 +62,7 @@ namespace WinShareEnum
         public static ConcurrentDictionary<string, List<shareStruct>> all_readable_shares = new ConcurrentDictionary<string, List<shareStruct>>();
         public static ConcurrentDictionary<string, Dictionary<string, List<string>>> all_readable_files = new ConcurrentDictionary<string, Dictionary<string, List<string>>>();
         public ConcurrentBag<string> all_interesting_files = new ConcurrentBag<string>();
+        public static List<IPAddress> ImportedIPs = new List<IPAddress>();
 
         public enum GenericRights : uint
         {
@@ -130,6 +132,16 @@ namespace WinShareEnum
             if (tbUsername.Text != "")
             {
                 USERNAME = tbUsername.Text;
+            }
+        }
+
+
+        private void tbIPRange_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            //assume since they changed the IP list, they no longer want to use their imported list..
+            if (tbIPRange.Text.ToLower() != "using imported list")
+            {
+                useImportedIPs = false;
             }
         }
 
@@ -451,25 +463,34 @@ namespace WinShareEnum
                     AUTHLOCALLY = splat[0] == "." ? true : false;
                 }
 
+                btn_Stop.IsEnabled = true;
                 btn_Stop.Visibility = Visibility.Visible;
                 btnGO.Visibility = System.Windows.Visibility.Hidden;
                 resetGUI();
                 List<IPAddress> ip_list = new List<IPAddress>();
-                try
+
+                if (useImportedIPs == true)
                 {
-                    IPRange ipr = new IPRange(tbIPRange.Text.Trim());
-                    ip_list = ipr.GetAllIP().ToList<IPAddress>();
-
-                    pgbMain.Maximum = ip_list.Count;
-                    addLog("Starting share enumeration of " + ip_list.Count + " servers (" + _parallelOption.MaxDegreeOfParallelism + " threads)...");
-
+                    ip_list = ImportedIPs;
                 }
-                catch (Exception)
+                else
                 {
-                    throw new Exception("Invalid IP Range Entered.");
+                    try
+                    {
+                        IPRange ipr = new IPRange(tbIPRange.Text.Trim());
+                        ip_list = ipr.GetAllIP().ToList<IPAddress>();
+
+            
+
+                    }
+                    catch (Exception)
+                    {
+                        throw new Exception("Invalid IP Range Entered.");
+                    }
                 }
 
-
+                pgbMain.Maximum = ip_list.Count;
+                addLog("Starting share enumeration of " + ip_list.Count + " servers (" + _parallelOption.MaxDegreeOfParallelism + " threads)...");
 
                 pgbMain.Visibility = Visibility.Visible;
 
@@ -596,6 +617,12 @@ namespace WinShareEnum
 
                 }
             }
+        }
+
+
+        private void btn_clearResults_Click(object sender, RoutedEventArgs e)
+        {
+            lv_resultsList.Items.Clear();
         }
 
         private async void btFindInterestingFiles_Click(object sender, RoutedEventArgs e)
@@ -972,6 +999,65 @@ namespace WinShareEnum
                 addLog("Error " + ex.Message + " -- " + ex.StackTrace);
             }
         }
+
+        private void mi_importIPs_Click(object sender, RoutedEventArgs e)
+        {
+            Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
+
+            dlg.DefaultExt = ".*";
+            dlg.Filter = "Any Files (*.*)|*.*|Text Files (*.txt)|*.txt";
+
+            Nullable<bool> result = dlg.ShowDialog();
+
+            if (result == true)
+            {
+                addLog("Adding IPs from " + dlg.FileName);
+                resetGUI();
+                useImportedIPs = true;
+                tbIPRange.Text = "Using Imported";
+
+                ImportedIPs = new List<IPAddress>();
+                try
+                {
+                    string line;
+                    int fileEntries = 0;
+                    int totalEntries = 0;
+
+                    using (StreamReader reader = new StreamReader(dlg.FileName))
+                    {
+                        while ((line = reader.ReadLine()) != null)
+                        {
+                            try
+                            {
+                                fileEntries++;
+                                IPRange ipr = new IPRange(line);
+                                foreach (IPAddress ip in ipr.GetAllIP())
+                                {
+                                    ImportedIPs.Add(ip);
+                                    totalEntries++;
+                                }
+                            }
+                            catch (Exception)
+                            {
+                                addLog("Error - failed to parse " + line + " as a valid IP range, skipping it..");
+                            }
+                        }
+                    }
+
+                    addLog("Successfully added " + fileEntries + " entries, " + totalEntries + " IPs total. Hit GO to begin.");
+                }
+                catch (Exception ex)
+                {
+                    addLog("Error importing IPs " + ex.Message + "\r\n" + ex.StackTrace);
+                    useImportedIPs = false;
+                }
+
+            }
+
+
+        }
+
+
 
         #endregion
 
@@ -1729,6 +1815,9 @@ namespace WinShareEnum
         }
 
         #endregion
+
+     
+
 
     }
 
