@@ -1,3 +1,4 @@
 unattended.*
 autounattend.*
 unattend.*
+groups.xml
