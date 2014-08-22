@@ -25,6 +25,4 @@ A few things:
 		if there are any file filters that are missing (there are probably a lot) or good regular expressions used, please email me (click about --> version for my address) so i can update the standard list. likewise for bugs.
 		
 
-Thanks to the guys over at www.botnetchecks.com for their contributions..
-
 cheers   
