@@ -168,5 +168,15 @@ namespace WinShareEnum
         }
 
 
+        private void cb_ResolveSIDs_Checked(object sender, RoutedEventArgs e)
+        {
+            MainWindow.resolveGroupSIDs = true;
+        }
+
+        private void cb_ResolveSIDs_Unchecked(object sender, RoutedEventArgs e)
+        {
+            MainWindow.resolveGroupSIDs = false;
+        }
+
     }
 }

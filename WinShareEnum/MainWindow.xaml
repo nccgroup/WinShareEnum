@@ -180,7 +180,7 @@
                 <ColumnDefinition Width="1082*"/>
             </Grid.ColumnDefinitions>
             <TreeView x:Name="treeviewMain" HorizontalAlignment="Left" Margin="9.075,10,0,29" Width="330" SelectedItemChanged="treeviewMain_SelectedItemChanged" BorderBrush="LightGray" IsTabStop="False" Grid.Column="1"/>
-            <TextBox TabIndex="1" x:Name="tbUsername" TextChanged="tbUsername_TextChanged" GotFocus="tbUsername_GotFocus" Margin="0,59,21,0" HorizontalAlignment="Right" Width="184" Height="28" VerticalAlignment="Top" LostFocus="tbUsername_LostFocus" BorderBrush="LightGray" Grid.Column="1" />
+            <TextBox AcceptsReturn="False" ScrollViewer.VerticalScrollBarVisibility="Auto" ToolTip="If you want to auth locally, use the format .\username.&#x0a;Though it tries to grab the fully qualified domain name, sometimes (like over VPN) this fails.&#x0a;If possible use a user like relevant.domain.local\jonmurray" TabIndex="1" x:Name="tbUsername" TextChanged="tbUsername_TextChanged" GotFocus="tbUsername_GotFocus" Margin="0,59,21,0" HorizontalAlignment="Right" Width="184" Height="28" VerticalAlignment="Top" LostFocus="tbUsername_LostFocus" BorderBrush="LightGray" Grid.Column="1" />
             <PasswordBox TabIndex="2" x:Name="tbPassword"  PasswordChanged="tbPassword_PasswordChanged" GotFocus="tbPassword_GotFocus" Margin="0,97,21,0" Height="29" VerticalAlignment="Top" HorizontalAlignment="Right" Width="141"  LostFocus="tbPassword_LostFocus" BorderBrush="LightGray" Grid.Column="1"/>
 
 

@@ -5,24 +5,16 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using System.Net;
-using System.Management;
-using System.Data;
-using System.ComponentModel;
 using System.Threading;
 using System.Collections.Concurrent;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Security.AccessControl;
-using System.Reflection;
-using System.Diagnostics;
+using System.DirectoryServices.ActiveDirectory;
+using System.Security.Principal;
+using System.DirectoryServices;
 
 namespace WinShareEnum
 {
@@ -33,11 +25,11 @@ namespace WinShareEnum
         public static string USERNAME = "";
         public static string PASSSWORD = "";
         public static List<string> interestingFileList = new List<string>() { "web.conf", "credentials", "credentials.*", "###\\b(?:\\d{1,3}\\.){3}\\d{1,3}\\b", "creds", "creds.*", "shadow", ".bashrc", "secret", "secret.*", "*.pem", "password.*", ".htaccess", "key.*", "privatekey.*", "private_key.*", "global.asax", "pwned.*", "*.key", "*.pkcs12", "*.pfx", "*.p12", "*.crt" };
-        public static List<string> fileContentsFilters = new List<string>() { "BEGIN PRIVATE KEY", "BEGIN RSA PRIVATE KEY", "password=", "password =", "pass=", "pass = ", "password:", "password :", "username =", "user =", "username=", "user="};
-        
+        public static List<string> fileContentsFilters = new List<string>() { "BEGIN PRIVATE KEY", "BEGIN RSA PRIVATE KEY", "password=", "password =", "pass=", "pass = ", "password:", "password :", "username =", "user =", "username=", "user=" };
+
         public static CancellationTokenSource _cancellationToken = new CancellationTokenSource();
         public static ParallelOptions _parallelOption = new ParallelOptions { MaxDegreeOfParallelism = 30, CancellationToken = _cancellationToken.Token };
-     
+
         public static LOG_LEVEL logLevel = LOG_LEVEL.ERROR;
 
         public static bool recursiveSearch = true;
@@ -45,6 +37,7 @@ namespace WinShareEnum
         public static bool autoScroll = true;
         public static bool includeBinaryFiles = false;
         public static bool useImportedIPs = false;
+        public static bool resolveGroupSIDs = true; //todo: this from the menu
 
         public const int ICON_HEIGHT = 15;
         public const int ICON_WIDTH = 18;
@@ -54,8 +47,8 @@ namespace WinShareEnum
         public static bool AUTHLOCALLY = false;
 
 
-        public static System.Windows.Media.SolidColorBrush brush_EveryoneRead = Brushes.Red;
-        public static System.Windows.Media.SolidColorBrush brush_currentUserRead = Brushes.Blue;
+        public static SolidColorBrush brush_EveryoneRead = Brushes.Red;
+        public static SolidColorBrush brush_currentUserRead = Brushes.Blue;
         #endregion
 
         public static ConcurrentQueue<string> loglist;
@@ -63,6 +56,8 @@ namespace WinShareEnum
         public static ConcurrentDictionary<string, Dictionary<string, List<string>>> all_readable_files = new ConcurrentDictionary<string, Dictionary<string, List<string>>>();
         public ConcurrentBag<string> all_interesting_files = new ConcurrentBag<string>();
         public static List<IPAddress> ImportedIPs = new List<IPAddress>();
+
+        public static ConcurrentBag<string> SIDsToResolve = new ConcurrentBag<string>();
 
         public enum GenericRights : uint
         {
@@ -85,6 +80,8 @@ namespace WinShareEnum
             ERROR,
             INTERESTINGONLY
         }
+
+        private static ConcurrentDictionary<string, string> SIDsDict = new ConcurrentDictionary<string, string>();
 
         public struct shareStruct
         {
@@ -134,7 +131,6 @@ namespace WinShareEnum
                 USERNAME = tbUsername.Text;
             }
         }
-
 
         private void tbIPRange_TextChanged(object sender, TextChangedEventArgs e)
         {
@@ -207,6 +203,7 @@ namespace WinShareEnum
             pgbMain.Maximum = 0;
             SetGlowVisibility(pgbMain, Visibility.Hidden);
             NUMBER_FILES_PROCESSED = 0;
+            SIDsDict = new ConcurrentDictionary<string, string>();
         }
 
         private void addToResultsList(string pathName, string filename, string comment = "")
@@ -225,28 +222,34 @@ namespace WinShareEnum
 
         public void addLog(string item, bool isDeadMessage = false)
         {
-            if (!_cancellationToken.IsCancellationRequested)
-            {
-                loglist.Enqueue(DateTime.Now + " - " + item);
-            }
-            else if (isDeadMessage == true)
-            {
-                loglist.Enqueue(DateTime.Now + " - " + item);
-                resetTokens();
-            }
+          
+                if (!_cancellationToken.IsCancellationRequested)
+                {
+                    loglist.Enqueue(DateTime.Now + " - " + item);
+                }
+                else if (isDeadMessage == true)
+                {
+                    loglist.Enqueue(DateTime.Now + " - " + item);
+                    resetTokens();
+                }
             while (!loglist.IsEmpty)
             {
+
                 string res = "";
                 loglist.TryDequeue(out res);
-                lbLog.Items.Add(res);
 
-                if (autoScroll == true)
-                {
-                    lbLog.SelectedIndex = lbLog.Items.Count - 1;
-                    lbLog.ScrollIntoView(lbLog.SelectedItem);
-                }
+                Dispatcher.Invoke((Action)delegate
+                 {
+                     lbLog.Items.Add(res);
+
+                     if (autoScroll == true)
+                     {
+                         lbLog.SelectedIndex = lbLog.Items.Count - 1;
+                         lbLog.ScrollIntoView(lbLog.SelectedItem);
+                     }
+                 });
             }
-
+         
         }
 
         private void CheckBox_Checked(object sender, RoutedEventArgs e)
@@ -328,7 +331,7 @@ namespace WinShareEnum
                 StackPanel holder = new StackPanel();
                 holder.Orientation = Orientation.Horizontal;
                 holder.Children.Add(new Image() { Source = new BitmapImage(new Uri("pack://application:,,,/Resources/low.png")), Height = ICON_HEIGHT, Width = ICON_WIDTH });
-                holder.Children.Add(new TextBlock() { Text = ti.Header.ToString(), VerticalAlignment = System.Windows.VerticalAlignment.Center });
+                holder.Children.Add(new TextBlock() { Text = ti.Header.ToString(), VerticalAlignment = VerticalAlignment.Center });
 
 
                 ti.Header = holder;
@@ -340,7 +343,7 @@ namespace WinShareEnum
                 StackPanel holder = new StackPanel();
                 holder.Orientation = Orientation.Horizontal;
                 holder.Children.Add(new Image() { Source = new BitmapImage(new Uri("pack://application:,,,/Resources/info.png")), Height = ICON_HEIGHT, Width = ICON_WIDTH });
-                holder.Children.Add(new TextBlock() { Text = ti.Header.ToString(), VerticalAlignment = System.Windows.VerticalAlignment.Center });
+                holder.Children.Add(new TextBlock() { Text = ti.Header.ToString(), VerticalAlignment = VerticalAlignment.Center });
 
                 ti.Header = holder;
 
@@ -384,31 +387,41 @@ namespace WinShareEnum
                     TextBlock tb = (TextBlock)sp.Children[1];
 
 
-                    string text = tb.Text;
-                    string text2 = item.Header.ToString();
+                    string serverName = tb.Text;
+                    string shareName = item.Header.ToString();
                     StringBuilder sb = new StringBuilder();
                     bool FoundShare = false;
 
-                    if (all_readable_shares.ContainsKey(text))
+                    if (all_readable_shares.ContainsKey(serverName))
                     {
-                        sb.Append(@"\\" + text + "\\" + text2 + ":");
-                        foreach (shareStruct ss in all_readable_shares[text])
+                        sb.Append(@"\\" + serverName + "\\" + shareName + ":");
+                        foreach (shareStruct ss in all_readable_shares[serverName])
                         {
-                            if (ss.shareName == text2)
+                            if (ss.shareName == shareName)
                             {
                                 FoundShare = true;
                                 foreach (FileSystemAccessRule fas in ss.permissionsList)
                                 {
-                                    sb.Append("\r\n\t- " + fas.IdentityReference.ToString());
+                                    //if we have resolved group SIDs, try and get the resolved version
+                                    if (resolveGroupSIDs == true && SIDsDict.ContainsKey(fas.IdentityReference.Value))
+                                    {
+                                        sb.Append("\r\n\r\n\t- " + SIDsDict[fas.IdentityReference.Value]);
+                                    }
+                                    else
+                                    {
+                                        sb.Append("\r\n\r\n\t- " + fas.IdentityReference.ToString());
+                                    }
+
                                     sb.Append("\r\n\t\t--" + MapGenericRightsToFileSystemRights(fas.FileSystemRights));
                                 }
-                            }
 
+                                sb.Append("\r\n");
+                            }
                         }
                         if (FoundShare == false)
                         {
                             sb = new StringBuilder();
-                            sb.Append(@"\\" + text + "\\" + text2 + ":");
+                            sb.Append(@"\\" + serverName + "\\" + shareName + ":");
                             sb.Append("\r\n\t- Unable to enumerate share permissions.");
                             tb_SelectedSharePerms.IsEnabled = false;
                         }
@@ -443,9 +456,11 @@ namespace WinShareEnum
         #endregion
 
         #region buttons/menus
+   
 
         private async void btnGO_Click(object sender, RoutedEventArgs e)
         {
+
             try
             {
                 if (checkbox_Null.IsChecked == false)
@@ -465,7 +480,7 @@ namespace WinShareEnum
 
                 btn_Stop.IsEnabled = true;
                 btn_Stop.Visibility = Visibility.Visible;
-                btnGO.Visibility = System.Windows.Visibility.Hidden;
+                btnGO.Visibility = Visibility.Hidden;
                 resetGUI();
                 List<IPAddress> ip_list = new List<IPAddress>();
 
@@ -478,10 +493,7 @@ namespace WinShareEnum
                     try
                     {
                         IPRange ipr = new IPRange(tbIPRange.Text.Trim());
-                        ip_list = ipr.GetAllIP().ToList<IPAddress>();
-
-            
-
+                        ip_list = ipr.GetAllIP().ToList();
                     }
                     catch (Exception)
                     {
@@ -503,27 +515,85 @@ namespace WinShareEnum
                         Parallel.ForEach(ip_list, _parallelOption, item =>
                             tList.Add(_populateShareStructsTimeout(item.ToString())));
                     });
+
+                    //resolve any SIDs that are necessary on the domain specified
+                    if (resolveGroupSIDs == true && USERNAME != null && USERNAME != "" && AUTHLOCALLY == false && SIDsToResolve.Count > 0) //no point resolving SIDs if we are authing locally only
+                    {
+                        addLog("Resolving " + SIDsToResolve.Count + " Group SIDs");
+                        pgbMain.Value = 0;
+                        pgbMain.Maximum = SIDsToResolve.Count;
+
+
+                        string domainController = "";
+                       
+                        NetworkCredential creds = getNetworkCredentials("doesnt matter");
+
+                        await Task.Run(() =>
+                        {
+                            Dispatcher.Invoke((Action)delegate
+                            {
+                                if (creds.Domain != null || creds.Domain != "")
+                                {
+                                    addLog("Getting domain controller");
+                                    domainController = getDomainControllers(creds.Domain, creds.UserName, creds.Password);
+                                }
+                            });
+
+                            if (domainController != "")
+                            {
+                                addLog("Using domain controller " + domainController + " for LDAP lookups");
+                                Parallel.ForEach(SIDsToResolve, _parallelOption, SID =>
+                                    {
+                                        if (logLevel < LOG_LEVEL.ERROR)
+                                        {
+                                            Dispatcher.Invoke((Action)delegate { addLog("Attempting to look up domain SID " + SID); });
+                                        }
+
+                                        try
+                                        {
+                                            string ResolvedSID = resolveDomainGroupSID(SID, domainController, creds);
+                                            if (ResolvedSID != "")
+                                            {
+                                                if (!SIDsDict.ContainsKey(SID))
+                                                {
+                                                    Dispatcher.Invoke((Action)delegate { addLog("Resolved Group SID " + SID + " to " + ResolvedSID); });
+                                                }
+
+                                                SIDsDict.TryAdd(SID, ResolvedSID);
+                                            }
+              }
+                                        catch (Exception ex)
+                                        {
+                                            if (logLevel < LOG_LEVEL.INTERESTINGONLY)
+                                            {
+                                                Dispatcher.Invoke((Action)delegate { addLog("Failed to resolve SID " + SID + " - " + ex.ToString()); });
+                                            }
+                                        }
+
+                                        Dispatcher.Invoke((Action)delegate { pgbMain.Value += 1; });
+                                    });
+                                } //end resolve domain sids if domain is not nothing
+                        });
+
+
+                        addLog("Finished Resolving SIDs");
+                    }
                 }
 
                 catch (OperationCanceledException)
                 {
-                        addLog("Threads dead, baby. Threads dead.", true);
-                        btn_Stop.Visibility = System.Windows.Visibility.Hidden;
-                        btnGO.Visibility = System.Windows.Visibility.Visible;
-                        pgbMain.Visibility = Visibility.Hidden;
-                        btn_Stop.IsEnabled = true;
-                        return;
+                    addLog("Threads dead, baby. Threads dead.", true);
+                    btn_Stop.Visibility = Visibility.Hidden;
+                    btnGO.Visibility = Visibility.Visible;
+                    pgbMain.Visibility = Visibility.Hidden;
+                    btn_Stop.IsEnabled = true;
+                    return;
                 }
-
-
 
                 pgbMain.Visibility = Visibility.Hidden;
                 addLog("Share enumeration Complete.");
 
-
-
-                btnGO.Visibility = System.Windows.Visibility.Visible;
-
+                btnGO.Visibility = Visibility.Visible;
 
                 int totalServers = all_readable_shares.Count;
                 int totalShares = 0;
@@ -557,12 +627,12 @@ namespace WinShareEnum
                 addLog(everyoneReadable + " shares readable by everyone");
 
             }
-                catch (OperationCanceledException)
+            catch (OperationCanceledException)
             {
 
                 addLog("Threads dead, baby. Threads dead.", true);
-                btn_Stop.Visibility = System.Windows.Visibility.Hidden;
-                btnGO.Visibility = System.Windows.Visibility.Visible;
+                btn_Stop.Visibility = Visibility.Hidden;
+                btnGO.Visibility = Visibility.Visible;
                 btn_Stop.IsEnabled = true;
                 return;
             }
@@ -573,8 +643,8 @@ namespace WinShareEnum
                 if (ex.InnerException != null && ex.InnerException.Message != null && ex.InnerException.Message == "The operation was canceled.")
                 {
                     addLog("Threads dead, baby. Threads dead.", true);
-                    btn_Stop.Visibility = System.Windows.Visibility.Hidden;
-                    btnGO.Visibility = System.Windows.Visibility.Visible;
+                    btn_Stop.Visibility = Visibility.Hidden;
+                    btnGO.Visibility = Visibility.Visible;
                     btn_Stop.IsEnabled = true;
                     return;
                 }
@@ -582,7 +652,7 @@ namespace WinShareEnum
                 else
                 {
 
-                    btnGO.Visibility = System.Windows.Visibility.Visible;
+                    btnGO.Visibility = Visibility.Visible;
                     pgbMain.Visibility = Visibility.Hidden;
                     MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Exclamation);
 
@@ -619,7 +689,6 @@ namespace WinShareEnum
             }
         }
 
-
         private void btn_clearResults_Click(object sender, RoutedEventArgs e)
         {
             lv_resultsList.Items.Clear();
@@ -629,8 +698,8 @@ namespace WinShareEnum
         {
             btnFindInterestingFiles.IsEnabled = false;
             btn_StopInteresting.IsEnabled = true;
-            btn_StopInteresting.Visibility = System.Windows.Visibility.Visible;
-            btnFindInterestingFiles.Visibility = System.Windows.Visibility.Hidden;
+            btn_StopInteresting.Visibility = Visibility.Visible;
+            btnFindInterestingFiles.Visibility = Visibility.Hidden;
 
 
             try
@@ -647,7 +716,7 @@ namespace WinShareEnum
                     }
                 }
 
-                pgbMain.Visibility = System.Windows.Visibility.Visible;
+                pgbMain.Visibility = Visibility.Visible;
 
                 pgbMain.Maximum = shareList.Count;
                 pgbMain.Value = 0;
@@ -660,14 +729,14 @@ namespace WinShareEnum
                          finalInteresting.Add(getInterstingFileList(item)));
                  });
 
-                pgbMain.Visibility = System.Windows.Visibility.Hidden;
+                pgbMain.Visibility = Visibility.Hidden;
                 finalInteresting = new ConcurrentBag<bool>();
 
                 addLog("Searching for interesting files complete.");
                 btnFindInterestingFiles.IsEnabled = true;
                 btn_StopInteresting.IsEnabled = false;
-                btn_StopInteresting.Visibility = System.Windows.Visibility.Hidden;
-                btnFindInterestingFiles.Visibility = System.Windows.Visibility.Visible;
+                btn_StopInteresting.Visibility = Visibility.Hidden;
+                btnFindInterestingFiles.Visibility = Visibility.Visible;
             }
 
             catch (OperationCanceledException)
@@ -676,11 +745,11 @@ namespace WinShareEnum
                 //reset file dict
                 all_readable_files = new ConcurrentDictionary<string, Dictionary<string, List<string>>>();
 
-                btn_StopInteresting.Visibility = System.Windows.Visibility.Hidden;
-                btnFindInterestingFiles.Visibility = System.Windows.Visibility.Visible;
+                btn_StopInteresting.Visibility = Visibility.Hidden;
+                btnFindInterestingFiles.Visibility = Visibility.Visible;
                 btn_StopInteresting.IsEnabled = false;
                 btnFindInterestingFiles.IsEnabled = true;
-                pgbMain.Visibility = System.Windows.Visibility.Hidden;
+                pgbMain.Visibility = Visibility.Hidden;
                 return;
             }
 
@@ -693,10 +762,10 @@ namespace WinShareEnum
                     //reset file dict
                     all_readable_files = new ConcurrentDictionary<string, Dictionary<string, List<string>>>();
                     btnFindInterestingFiles.IsEnabled = true;
-                    btn_StopInteresting.Visibility = System.Windows.Visibility.Hidden;
-                    btnFindInterestingFiles.Visibility = System.Windows.Visibility.Visible;
+                    btn_StopInteresting.Visibility = Visibility.Hidden;
+                    btnFindInterestingFiles.Visibility = Visibility.Visible;
                     btn_StopInteresting.IsEnabled = true;
-                    pgbMain.Visibility = System.Windows.Visibility.Hidden;
+                    pgbMain.Visibility = Visibility.Hidden;
                     return;
 
                 }
@@ -721,7 +790,7 @@ namespace WinShareEnum
         private async void btnGrepFiles_Click(object sender, RoutedEventArgs e)
         {
             btn_StopGrep.IsEnabled = true;
-            btn_StopGrep.Visibility = System.Windows.Visibility.Visible;
+            btn_StopGrep.Visibility = Visibility.Visible;
             btnGrepFiles.Visibility = Visibility.Hidden;
 
 
@@ -737,7 +806,7 @@ namespace WinShareEnum
                     }
                 }
 
-                pgbMain.Visibility = System.Windows.Visibility.Visible;
+                pgbMain.Visibility = Visibility.Visible;
 
                 pgbMain.Maximum = shareList.Count;
                 pgbMain.Value = 0;
@@ -750,7 +819,7 @@ namespace WinShareEnum
                         finalInteresting.Add(getFileContentsList(item)));
                 });
 
-                pgbMain.Visibility = System.Windows.Visibility.Hidden;
+                pgbMain.Visibility = Visibility.Hidden;
                 finalInteresting = new ConcurrentBag<bool>();
 
                 addLog("Searching file contents complete.");
@@ -764,7 +833,7 @@ namespace WinShareEnum
                 //reset file dict
                 all_readable_files = new ConcurrentDictionary<string, Dictionary<string, List<string>>>();
                 //todo: change
-                btn_StopGrep.Visibility = System.Windows.Visibility.Hidden;
+                btn_StopGrep.Visibility = Visibility.Hidden;
                 btnGrepFiles.Visibility = Visibility.Visible;
                 btn_StopGrep.IsEnabled = true;
                 pgbMain.Visibility = Visibility.Hidden;
@@ -779,7 +848,7 @@ namespace WinShareEnum
                     //reset file dict
                     all_readable_files = new ConcurrentDictionary<string, Dictionary<string, List<string>>>();
                     //todo: change
-                    btn_StopGrep.Visibility = System.Windows.Visibility.Hidden;
+                    btn_StopGrep.Visibility = Visibility.Hidden;
                     btnGrepFiles.Visibility = Visibility.Visible;
                     btn_StopGrep.IsEnabled = true;
                     pgbMain.Visibility = Visibility.Hidden;
@@ -801,7 +870,7 @@ namespace WinShareEnum
             }
             btnGrepFiles.IsEnabled = true;
             btn_StopGrep.IsEnabled = false;
-            btn_StopGrep.Visibility = System.Windows.Visibility.Hidden;
+            btn_StopGrep.Visibility = Visibility.Hidden;
             btnGrepFiles.Visibility = Visibility.Visible;
         }
 
@@ -817,7 +886,15 @@ namespace WinShareEnum
 
                     foreach (FileSystemAccessRule fas in ss.permissionsList)
                     {
-                        sb.Append("\r\n\t- " + fas.IdentityReference.ToString());
+                        if (resolveGroupSIDs == true && SIDsDict.ContainsKey(fas.IdentityReference.Value))
+                        {
+                            sb.Append("\r\n\r\n\t- " + SIDsDict[fas.IdentityReference.Value]);
+                        }
+                        else
+                        {
+                            sb.Append("\r\n\r\n\t- " + fas.IdentityReference.ToString());
+                        }
+
                         sb.Append("\r\n\t\t--" + MapGenericRightsToFileSystemRights(fas.FileSystemRights));
                     }
                 }
@@ -844,8 +921,6 @@ namespace WinShareEnum
         {
             Button b = sender as Button;
             dgItem aa = b.CommandParameter as dgItem;
-
-          
 
             string[] basepath = aa.Path.Split('\\');
 
@@ -910,7 +985,7 @@ namespace WinShareEnum
         private void mi_CopyResultsPane_Click(object sender, RoutedEventArgs e)
         {
             StringBuilder sb = new StringBuilder();
-            foreach(dgItem item in lv_resultsList.Items)
+            foreach (dgItem item in lv_resultsList.Items)
             {
                 sb.Append(item.Path + "\t\t" + item.Comment + "\r\n");
             }
@@ -968,7 +1043,8 @@ namespace WinShareEnum
         {
             try
             {
-                if (updates.getCurrentVersion() < updates.getLatestVersion())
+                var latestVersion = updates.getLatestVersion();
+                if (updates.getCurrentVersion() < latestVersion)
                 {
                     MessageBoxResult mbr = MessageBox.Show("New version available, want to download it? \r\n\r\nNote: this will download to desktop and overwrite..", "Update", MessageBoxButton.YesNo, MessageBoxImage.Information);
 
@@ -977,8 +1053,7 @@ namespace WinShareEnum
                         try
                         {
                             addLog("Downloading most recent version to desktop..");
-                            updates.downloadUpdate();
-                            addLog(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "\\WinShareEnum.exe downloaded.");
+                            addLog(updates.downloadUpdate(latestVersion) + " downloaded.");
                         }
                         catch (Exception ex)
                         {
@@ -1007,7 +1082,7 @@ namespace WinShareEnum
             dlg.DefaultExt = ".*";
             dlg.Filter = "Any Files (*.*)|*.*|Text Files (*.txt)|*.txt";
 
-            Nullable<bool> result = dlg.ShowDialog();
+            bool? result = dlg.ShowDialog();
 
             if (result == true)
             {
@@ -1073,88 +1148,125 @@ namespace WinShareEnum
 
             var oNetworkCredential = getNetworkCredentials(ServerName);
 
-                try
+            try
+            {
+                //auth to server, we do want to timeout on discovery
+                using (new RemoteAccessHelper.NetworkConnection(@"\\" + ServerName, oNetworkCredential, true))
                 {
-                    //auth to server, we do want to timeout on discovery
-                    using (new RemoteAccessHelper.NetworkConnection(@"\\" + ServerName, oNetworkCredential, true))
+                    WinNetworking _getNetworkShares = new WinNetworking();
+
+                    //get shares
+                    WinNetworking.SHARE_INFO_1[] gnssi1 = _getNetworkShares.EnumNetShares(ServerName);
+                    string currentShareName = "";
+
+                    if (gnssi1 != null)
                     {
-                        WinNetworking _getNetworkShares = new WinNetworking();
-
-                        //get shares
-                        WinNetworking.SHARE_INFO_1[] gnssi1 = _getNetworkShares.EnumNetShares(ServerName);
-                        string currentShareName = "";
-
-                        if (gnssi1 != null)
+                        for (int i = 0; i < gnssi1.Length; i++)
                         {
-                            for (int i = 0; i < gnssi1.Length; i++)
+
+                            shareStruct ss = new shareStruct()
                             {
+                                shareName = gnssi1[i].shi1_netname,
+                                ipAddressHostname = ServerName
+                            };
 
-                                shareStruct ss = new shareStruct()
+                            currentShareName = ss.shareName;
+
+                            //get dir acls
+                            try
+                            {
+                                if (_cancellationToken.IsCancellationRequested)
                                 {
-                                    shareName = gnssi1[i].shi1_netname,
-                                    ipAddressHostname = ServerName
-                                };
+                                    throw new OperationCanceledException();
+                                }
+                                var _dirPerm = Directory.GetAccessControl(@"\\" + ServerName + "\\" + ss.shareName);
+                                var _accessRules = _dirPerm.GetAccessRules(true, true, typeof(NTAccount));
+                                ss.permissionsList = _accessRules;
 
-                                currentShareName = ss.shareName;
 
-                                //get dir acls
-                                try
+                                foreach (FileSystemAccessRule fas in _accessRules)
                                 {
-                                    if (_cancellationToken.IsCancellationRequested)
+                                    if (fas.IdentityReference.ToString().ToLower() == "everyone")
                                     {
-                                        throw new OperationCanceledException();
+                                        ss.everyoneRights = fas.FileSystemRights;
+                                        ss.everyoneCanRead = hasReadPermissions(fas.FileSystemRights);
                                     }
-                                    var _dirPerm = Directory.GetAccessControl(@"\\" + ServerName + "\\" + ss.shareName);
-                                    var _accessRules = _dirPerm.GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
-                                    ss.permissionsList = _accessRules;
 
-                                    foreach (FileSystemAccessRule fas in _accessRules)
+                                    //add any SIDs that need resolving to the queue
+                                    if (fas.IdentityReference.Value.StartsWith("S-1-5") && resolveGroupSIDs == true)
                                     {
-                                        if (fas.IdentityReference.ToString().ToLower() == "everyone")
+                                        if (!SIDsToResolve.Contains(fas.IdentityReference.Value))
                                         {
-                                            ss.everyoneRights = fas.FileSystemRights;
-                                            ss.everyoneCanRead = hasReadPermissions(fas.FileSystemRights);
+                                            try
+                                            {
+                                                SIDsToResolve.Add(fas.IdentityReference.Value);
+                                            }
+                                            catch (Exception)
+                                            {
+                                                //swallow
+                                            }
                                         }
                                     }
 
-                                    ss.currentUserCanRead = true;
+                                    //todo: grab the sid locally
+                                    //S-1-5-21-849789807-3642702694-3220331756-1319
+                                    //try
+                                    //{
+                                    //    if (fas.IdentityReference.Value.StartsWith("S-1-5"))
+                                    //    {
+                                    //        var entry = new DirectoryEntry("LDAP://<SID=" + fas.IdentityReference.Value);
+                                    //        if (entry.Name != null)
+                                    //        {
+                                    //            var cvvdf = entry.Name;
+                                    //        }
+                                    //    }
+                                    //    string account = fas.IdentityReference.Translate(typeof(System.Security.Principal.NTAccount)).ToString();
+                                    //    var aas = account;
+                                    //}
+                                    //catch(Exception ex)
+                                    //{
+                                    //    var aa = ex;
+                                    //}
+                                }
 
-                                }
-                                catch (Exception ex)
-                                {
-                                    if (logLevel < LOG_LEVEL.INTERESTINGONLY)
-                                    {
-                                        Dispatcher.Invoke((Action)delegate { addLog("Error: " + ServerName + " (" + currentShareName + ")" + " - " + ex.Message); });
-                                    }
-                                }
-                                retList.Add(ss);
+                                ss.currentUserCanRead = true;
+
                             }
-                        }
-
-                        if (logLevel < LOG_LEVEL.ERROR)
-                        {
-                            var id = Task.CurrentId;
-                            Dispatcher.Invoke((Action)delegate { addLog("Thread " + id + " finished populating shares OK on " + ServerName); });
+                            catch (Exception ex)
+                            {
+                                if (logLevel < LOG_LEVEL.INTERESTINGONLY)
+                                {
+                                    Dispatcher.Invoke((Action)delegate { addLog("Error: " + ServerName + " (" + currentShareName + ")" + " - " + ex.Message); });
+                                }
+                            }
+                            retList.Add(ss);
                         }
                     }
-                }
 
-                catch (OperationCanceledException)
-                {
                     if (logLevel < LOG_LEVEL.ERROR)
                     {
-                        Dispatcher.Invoke((Action)delegate { addLog("Error: " + ServerName + " - timed out"); });
+                        var id = Task.CurrentId;
+                        Dispatcher.Invoke((Action)delegate { addLog("Thread " + id + " finished populating shares OK on " + ServerName); });
                     }
                 }
+            }
 
-                catch (Exception ex)
+            catch (OperationCanceledException)
+            {
+                if (logLevel < LOG_LEVEL.ERROR)
                 {
-                    if (logLevel < LOG_LEVEL.INTERESTINGONLY)
-                    {
-                        Dispatcher.Invoke((Action)delegate { addLog("Error: " + ServerName + " - " + ex.Message); });
-                    }
+                    Dispatcher.Invoke((Action)delegate { addLog("Error: " + ServerName + " - timed out"); });
                 }
-            
+            }
+
+            catch (Exception ex)
+            {
+                if (logLevel < LOG_LEVEL.INTERESTINGONLY)
+                {
+                    Dispatcher.Invoke((Action)delegate { addLog("Error: " + ServerName + " - " + ex.Message); });
+                }
+            }
+
 
 
             if (retList.Count > 0)
@@ -1187,7 +1299,7 @@ namespace WinShareEnum
         private static FileSystemRights MapGenericRightsToFileSystemRights(FileSystemRights OriginalRights)
         {
             FileSystemRights MappedRights = new FileSystemRights();
-            Boolean blnWasNumber = false;
+            bool blnWasNumber = false;
             if (Convert.ToBoolean(Convert.ToInt64(OriginalRights) & Convert.ToInt64(GenericRights.GENERIC_EXECUTE)))
             {
                 MappedRights = MappedRights | FileSystemRights.ExecuteFile | FileSystemRights.ReadPermissions | FileSystemRights.ReadAttributes | FileSystemRights.Synchronize;
@@ -1264,17 +1376,17 @@ namespace WinShareEnum
                     }
                     try
                     {
-                    if (_cancellationToken.IsCancellationRequested)
-                    {
-                        throw new OperationCanceledException();
-                    }
+                        if (_cancellationToken.IsCancellationRequested)
+                        {
+                            throw new OperationCanceledException();
+                        }
 
-                        firstFileList = Directory.EnumerateFiles(@"\\" + sharepath, "*.*", SearchOption.TopDirectoryOnly).ToList<string>();
+                        firstFileList = Directory.EnumerateFiles(@"\\" + sharepath, "*.*", System.IO.SearchOption.TopDirectoryOnly).ToList();
                         if (firstFileList != null)
                         {
                             foreach (string file in firstFileList)
                             {
-                                string fi = System.IO.Path.GetFileName(file);
+                                string fi = Path.GetFileName(file);
                                 isInteresting(fi, file);
                                 //update gui label with file count
                                 updateNumberofFilesProcessedLabel();
@@ -1301,10 +1413,6 @@ namespace WinShareEnum
                         }
                     }
 
-
-
-
-
                     if (recursiveSearch == true)
                     {
                         if (logLevel < LOG_LEVEL.ERROR)
@@ -1316,13 +1424,13 @@ namespace WinShareEnum
 
                         List<string> recursiveList = getAllFilesOnShare(sharepath);
 
-                   
+
 
                         foreach (string file in recursiveList)
                         {
                             if (!firstFileList.Contains(file))
                             {
-                                string fi = System.IO.Path.GetFileName(file);
+                                string fi = Path.GetFileName(file);
                                 isInteresting(fi, file);
                                 //update gui label with file count
                                 updateNumberofFilesProcessedLabel();
@@ -1356,7 +1464,7 @@ namespace WinShareEnum
                 }
                 return false;
             }
-       
+
         }
 
         private bool getFileContentsList(string sharepath)
@@ -1382,7 +1490,7 @@ namespace WinShareEnum
                             throw new OperationCanceledException();
                         }
 
-                        firstFileList = Directory.EnumerateFiles(@"\\" + sharepath, "*.*", SearchOption.TopDirectoryOnly).ToList<string>();
+                        firstFileList = Directory.EnumerateFiles(@"\\" + sharepath, "*.*", System.IO.SearchOption.TopDirectoryOnly).ToList();
                         if (firstFileList != null)
                         {
                             foreach (string file in firstFileList)
@@ -1555,8 +1663,8 @@ namespace WinShareEnum
             updateNumberofFilesProcessedLabel();
             return true;
         }
-                  
-    
+
+
         //needs updating
         private List<string> getAllFilesOnShare(string sharepath)
         {
@@ -1568,15 +1676,15 @@ namespace WinShareEnum
             {
                 all_readable_files.TryAdd(server, new Dictionary<string, List<string>>());
             }
-                if (!all_readable_files[server].ContainsKey(share))
-                {
-                    Dispatcher.Invoke((Action)delegate { addLog("Enumerating all files on " + sharepath + " this may take a while..."); });
-                    recursiveList = getDirectoryFilesRecursive(@"\\" + sharepath).ToList<string>();
-                    Dispatcher.Invoke((Action)delegate { addLog("Finished enumerating files on " + sharepath); });
-                    all_readable_files[server][share] = recursiveList;
+            if (!all_readable_files[server].ContainsKey(share))
+            {
+                Dispatcher.Invoke((Action)delegate { addLog("Enumerating all files on " + sharepath + " this may take a while..."); });
+                recursiveList = getDirectoryFilesRecursive(@"\\" + sharepath).ToList();
+                Dispatcher.Invoke((Action)delegate { addLog("Finished enumerating files on " + sharepath); });
+                all_readable_files[server][share] = recursiveList;
 
-                }
-       
+            }
+
             else   //do not need to enumerate all files if we have a list already
             {
                 if (all_readable_files[server].ContainsKey(share))
@@ -1606,16 +1714,16 @@ namespace WinShareEnum
 
                 try
                 {
-              
+
                     if (_cancellationToken.IsCancellationRequested)
                     {
                         throw new OperationCanceledException();
                     }
-                        foreach (string subDir in Directory.GetDirectories(path))
-                        {
-                            queue.Enqueue(subDir);
-                        }
-                    
+                    foreach (string subDir in Directory.GetDirectories(path))
+                    {
+                        queue.Enqueue(subDir);
+                    }
+
                 }
                 catch (Exception ex)
                 {
@@ -1684,7 +1792,7 @@ namespace WinShareEnum
         private void isInteresting(string shortFileName, string filePath)
         {
 
-     
+
             foreach (string interesting in interestingFileList)
             {
 
@@ -1703,7 +1811,7 @@ namespace WinShareEnum
                     return;
                 }
 
-             
+
                 //if (shortFileName.Contains("."))
                 //{
                 //    if (System.IO.Path.GetFileNameWithoutExtension(lowered) == interesting)
@@ -1715,7 +1823,7 @@ namespace WinShareEnum
                 //anything.file
                 if (interesting.StartsWith("*."))
                 {
-                    if (System.IO.Path.GetExtension(lowered) == interesting.TrimStart('*'))
+                    if (Path.GetExtension(lowered) == interesting.TrimStart('*'))
                     {
                         addToResultsList(filePath, shortFileName, "extension rule matched (" + interesting + ")");
                         Dispatcher.Invoke((Action)delegate { addLog("Interesting file found - " + shortFileName + " (" + shortFileName + ")"); });
@@ -1726,9 +1834,9 @@ namespace WinShareEnum
                 //filename.anything
                 else if (interesting.EndsWith(".*"))
                 {
-                    string aa = System.IO.Path.GetFileNameWithoutExtension(lowered);
+                    string aa = Path.GetFileNameWithoutExtension(lowered);
                     string bb = interesting.TrimEnd('*').TrimEnd('.');
-                    if (System.IO.Path.GetFileNameWithoutExtension(lowered) == interesting.TrimEnd('*').TrimEnd('.'))
+                    if (Path.GetFileNameWithoutExtension(lowered) == interesting.TrimEnd('*').TrimEnd('.'))
                     {
                         addToResultsList(filePath, shortFileName, "wildcard extension rule matched (" + interesting + ")");
                         Dispatcher.Invoke((Action)delegate { addLog("Interesting file found - " + shortFileName + " (" + shortFileName + ")"); });
@@ -1770,19 +1878,19 @@ namespace WinShareEnum
             string lowered = line.ToLower();
             foreach (string fileFilter in fileContentsFilters)
             {
-            
+
                 if (fileFilter.StartsWith("###"))
                 {
                     if (System.Text.RegularExpressions.Regex.IsMatch(lowered, fileFilter.TrimStart('#').ToLower()) == true)
                     {
-                        Dispatcher.Invoke((Action)delegate { addLog("Interesting file found - " + System.IO.Path.GetFileName(path) + " (" + path + ") matches regex filter rule: " + fileFilter); });
-                        addToResultsList(path, System.IO.Path.GetFileName(path), "contents regex matched (" + fileFilter.TrimStart('#') + ")");
+                        Dispatcher.Invoke((Action)delegate { addLog("Interesting file found - " + Path.GetFileName(path) + " (" + path + ") matches regex filter rule: " + fileFilter); });
+                        addToResultsList(path, Path.GetFileName(path), "contents regex matched (" + fileFilter.TrimStart('#') + ")");
                     }
                 }
                 else if (lowered.Contains(fileFilter.ToLower()))
                 {
-                    Dispatcher.Invoke((Action)delegate { addLog("Interesting file found - " + System.IO.Path.GetFileName(path) + " (" + path + ") matches filter rule: " + fileFilter); });
-                    addToResultsList(path, System.IO.Path.GetFileName(path), "file contents matched " + fileFilter);
+                    Dispatcher.Invoke((Action)delegate { addLog("Interesting file found - " + Path.GetFileName(path) + " (" + path + ") matches filter rule: " + fileFilter); });
+                    addToResultsList(path, Path.GetFileName(path), "file contents matched " + fileFilter);
                 }
             }
         }
@@ -1793,7 +1901,7 @@ namespace WinShareEnum
         /// <returns></returns>
         private static NetworkCredential getNetworkCredentials(string ServerName)
         {
-            var oNetworkCredential = new System.Net.NetworkCredential();
+            var oNetworkCredential = new NetworkCredential();
             if (AUTHLOCALLY == true)
             {
                 oNetworkCredential.UserName = ServerName + USERNAME.TrimStart('.');
@@ -1801,40 +1909,132 @@ namespace WinShareEnum
             }
             else
             {
+                if (USERNAME.Contains("\\"))
+                {
+                    oNetworkCredential.Domain = USERNAME.Split('\\')[0];
+                }
+
                 oNetworkCredential.UserName = USERNAME;
                 oNetworkCredential.Password = PASSSWORD;
             }
 
             return oNetworkCredential;
         }
-        
+
         private void resetTokens()
         {
             _cancellationToken = new CancellationTokenSource();
             _parallelOption = new ParallelOptions { MaxDegreeOfParallelism = 30, CancellationToken = _cancellationToken.Token };
         }
 
-        #endregion
+        private string resolveDomainGroupSID(string SID, string dc, NetworkCredential oNetworkCredential)
+        {
+            try
+            {
+                if (!SIDsDict.ContainsKey(SID))
+                {
+                    DirectoryEntry entry = new DirectoryEntry("LDAP://" + dc, oNetworkCredential.UserName, oNetworkCredential.Password);
+                    DirectorySearcher dSearch = new DirectorySearcher(entry);
+                    dSearch.Filter = "(&(objectsid=" + SID + "))";
 
-     
+
+                    dSearch.PropertiesToLoad.Add("samaccountname"); //only thing we care about
+                    dSearch.PropertiesToLoad.Add("objectclass");
+
+                    SearchResult res = dSearch.FindOne();
+
+                    //foreach (string key in res.Properties.PropertyNames)
+                    //{
+                    //    string tab = "    ";
+                    //    Console.WriteLine(key + " = ");
+                    //    foreach (object allofthem in res.Properties[key])
+                    //    {
+                    //        Console.WriteLine(tab + allofthem);
+                    //    }
+                    //}
 
 
+                    string resolved = res.Properties["samaccountname"][0].ToString(); //always has a samaccountname
+
+
+                    //weird way due to weird errors
+                    foreach(var temp in res.Properties.PropertyNames)
+                    {
+                        if (temp.ToString().ToLower() == "objectclass")
+                        {
+                            if (res.Properties["objectclass"] != null)
+                            {
+                                foreach (var cl in res.Properties["objectclass"])
+                                {
+                                    if (cl.ToString().ToLower() == "group")
+                                    {
+                                        resolved += " (group)";
+                                    }
+                                }
+                            }
+                        }
+                    }
+           
+                        
+                    
+                    if (logLevel < LOG_LEVEL.ERROR)
+                    {
+                        addLog("SID " + SID + " resolved to " + resolved);
+                    }
+
+                    return oNetworkCredential.Domain.ToUpper() + "\\" + resolved;
+
+                }
+
+                else //we have it already
+                {
+                    string ooot;
+                    SIDsDict.TryGetValue(SID, out ooot);
+                    return ooot;
+                }
+            }
+            catch (Exception ex)
+            {
+                if (logLevel < LOG_LEVEL.ERROR)
+                {
+                    addLog("Failed to resolve SID " + SID);
+                }
+                var vbb = ex;
+                return "";
+            }
+
+
+        }
+           
+
+        private string getDomainControllers(string baseDomain, string username, string password)
+        {
+            try
+            {
+                DirectoryContext domainContext = new DirectoryContext(DirectoryContextType.Domain, baseDomain, username, password);
+                var domain = Domain.GetDomain(domainContext);
+                string dc = domain.FindDomainController().Name;
+
+                var dcs = domain.DomainControllers;
+                foreach (DomainController dc2 in dcs)
+                {
+                    addLog("Found domain controller " + dc2.Name);
+                }
+
+                if (dc == null || dc == "")
+                {
+                    addLog("Failed to get domain controller, skipping domain sid resolution");
+                }
+
+                return dc;
+            }
+            catch (Exception ex)
+            {
+                addLog("Error resolving domain controller " + ex.ToString());
+                throw;
+            }
+        }
     }
-
-
-
-
 }
 
-
-
-    
-
-       
-
-
-
-
-
-
-
+#endregion

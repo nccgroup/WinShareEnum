@@ -6,18 +6,12 @@ using System.Threading.Tasks;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.ComponentModel;
-using System.Security.AccessControl;
 using System.Threading;
-using System.Configuration;
 using System.IO;
 using System.Collections.Specialized;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Documents;
 using System.Reflection;
 using System.Diagnostics;
+using System.Security.Principal;
 
 namespace WinShareEnum
 {
@@ -131,6 +125,9 @@ namespace WinShareEnum
         private byte[] endIP;
     }
 
+    /// <summary>
+    /// impersonation helper
+    /// </summary>
     public class RemoteAccessHelper
     {
         public class NetworkConnection : IDisposable
@@ -267,6 +264,9 @@ namespace WinShareEnum
         }
     }
 
+    /// <summary>
+    /// pinvoke wrapper
+    /// </summary>
     public class WinNetworking
     {
 
@@ -545,17 +545,19 @@ namespace WinShareEnum
         }
         
 
-        public static void downloadUpdate()
+        public static string downloadUpdate(double newestVersion)
         {
             WebClient client = new WebClient();
             client.Proxy = null;
-            if (File.Exists(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "\\WinShareEnum.exe"))
+            string filePath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "\\WinShareEnum-" + newestVersion.ToString() + ".exe";
+
+            if (File.Exists(filePath))
             {
-                throw new Exception("File exists on desktop already, delete it.");
+                return filePath;
             }
 
-            client.DownloadFile("https://github.com/nccgroup/WinShareEnum/raw/master/Info/WinShareEnum.exe", Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "\\WinShareEnum.exe");
-
+            client.DownloadFile("https://github.com/nccgroup/WinShareEnum/raw/master/Info/WinShareEnum.exe", filePath);
+            return filePath;
         }
 
 
@@ -566,5 +568,4 @@ namespace WinShareEnum
             return client.DownloadString(url).Split('\n').ToList<string>(); ;
         }
     }
-
 }
