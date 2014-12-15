@@ -1,12 +1,12 @@
 ﻿<Window x:Class="WinShareEnum.options"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Windows Share Enumerator - Options" Height="337" Width="772" ResizeMode="NoResize"  Icon="pack://application:,,,/Resources/NCCG-Icon-[CMYK].ico" >
+        Title="Windows Share Enumerator - Options" Height="372" Width="776" ResizeMode="NoResize"  Icon="pack://application:,,,/Resources/NCCG-Icon-[CMYK].ico" >
     <Grid>
 
 
-        <Label x:Name="lbl_Threads" FontSize="20" FontWeight="Bold" Margin="135,144,578,121" HorizontalContentAlignment="Right"/>
-        <GroupBox Header="Number of Threads" Height="48" Margin="10,134,562,0" VerticalAlignment="Top">
+        <Label x:Name="lbl_Threads" FontSize="20" FontWeight="Bold" Margin="135,184,578,109" HorizontalContentAlignment="Right"/>
+        <GroupBox Header="Number of Threads" Height="48" Margin="10,175,562,0" VerticalAlignment="Top">
             <Slider x:Name="sl_threads" Height="25" VerticalAlignment="Top" Maximum="50" Minimum="1" ValueChanged="Slider_ValueChanged" HorizontalAlignment="Left" Width="120" Margin="0,3,0,0" />
         </GroupBox>
         <GroupBox Header="Logging Verbosity" Height="94" Margin="12,0,560,10" VerticalAlignment="Bottom">
@@ -27,9 +27,12 @@
         <CheckBox x:Name="cb_recursiveSearch" HorizontalAlignment="Left" Margin="20,73,0,208" Width="168" Checked="cb_recursiveSearch_Checked" Unchecked="cb_recursiveSearch_Unchecked">
             <TextBlock Height="18" Width="148"><Run Text="Recursively search dirs"/></TextBlock>
         </CheckBox>
-        
+
         <CheckBox x:Name="cb_ResolveSIDs" HorizontalAlignment="Left" Margin="20,92,0,180" Width="168" IsChecked="True" Checked="cb_ResolveSIDs_Checked" Unchecked="cb_ResolveSIDs_Unchecked">
             <TextBlock Height="18" Width="148"><Run Text="Resolve Domain SIDs"/></TextBlock>
+        </CheckBox>
+        <CheckBox x:Name="cb_includeWindowsFiles" HorizontalAlignment="Left" Margin="20,112,0,192" Width="168" Checked="cb_includeWindowsFiles_Checked" Unchecked="cb_includeWindowsFiles_Unchecked">
+            <TextBlock Height="40" Width="158"><Run Text="Include C:\Windows\* &#x0a;and admin$ files "/></TextBlock>
         </CheckBox>
 
         <GroupBox Header="Search Expressions" Margin="213,0,10,10">

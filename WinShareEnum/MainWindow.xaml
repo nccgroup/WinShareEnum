@@ -1,7 +1,8 @@
 ﻿<Window x:Class="WinShareEnum.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Windows Share Enumerator - BETA" Height="732" Width="1111" SizeChanged="Window_SizeChanged" Icon="pack://application:,,,/Resources/NCCG-Icon-[CMYK].ico" >
+        xmlns:local="clr-namespace:WinShareEnum"
+        Title="Windows Share Enumerator" Height="732" Width="1111" SizeChanged="Window_SizeChanged" Icon="pack://application:,,,/Resources/NCCG-Icon-[CMYK].ico" >
 
     <Window.Resources>
         <LinearGradientBrush x:Key="DefaultTabColor" EndPoint="0.5,1" StartPoint="0.5,0"/>
@@ -211,7 +212,7 @@
                 {x:Static ToolBar.ButtonStyleKey}}" Background="{x:Null}" BorderBrush="Black" FontSize="12" Opacity="0.8" IsEnabled="False" IsTabStop="False" Grid.Column="1"/>
             <Button x:Name="btnGrepFiles" Content="Inspect File Contents" Height="28" Margin="371.075,54,0,0" VerticalAlignment="Top" Click="btnGrepFiles_Click" HorizontalAlignment="Left" Width="128"  Style="{StaticResource
                 {x:Static ToolBar.ButtonStyleKey}}" Background="{x:Null}" BorderBrush="Black" FontSize="12" Opacity="0.8" IsEnabled="False" IsTabStop="False" Grid.Column="1"/>
-            <GroupBox x:Name="gb_EnumResults" Header="File Enumeration Results" Margin="371.075,131,21,149" Grid.Column="1">
+            <GroupBox x:Name="gb_EnumResults" Header="File Enumeration Results" Margin="371,165,21,149" Grid.Column="1">
                 <ListView Name="lv_resultsList" ItemContainerStyle="{StaticResource alternatingListViewItemStyle}" AlternationCount="2" Margin="0,4,0,0" >
                     <ListView.View>
                         <GridView x:Name="gvtest">
@@ -243,7 +244,9 @@
 
             <TextBox  Background="#FFF5F5F5" x:Name="tb_SelectedSharePerms" Height="105" Margin="511.075,21,223,0" TextWrapping="Wrap" Text="Selected Share Permissions..." VerticalAlignment="Top" IsEnabled="False" IsReadOnly="True" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" Grid.Column="1" IsTabStop="False" />
             <Label x:Name="lbl_fileCount" Content="" HorizontalAlignment="Left"  Height="24" Margin="371.075,92,0,0" VerticalAlignment="Top" Width="128" Grid.Column="1"/>
-            <Button x:Name="btn_clearResults" Content="Clear Results" Height="16" Margin="371,0,0,129" VerticalAlignment="Bottom" HorizontalAlignment="Left" Width="128"  Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" Background="{x:Null}" BorderBrush="LightGray" FontSize="8" Opacity="0.8" IsEnabled="True" IsTabStop="False" Grid.Column="1" Click="btn_clearResults_Click"/>
+            <Button x:Name="btn_clearResults" Content="Clear Results" Height="16" Margin="371,0,0,129" VerticalAlignment="Bottom" HorizontalAlignment="Left" Width="128"  Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" Background="{x:Null}" BorderBrush="LightGray" FontSize="8" Opacity="0.8" IsEnabled="True" Grid.Column="1" Click="btn_clearResults_Click" IsTabStop="False" />
+            <TextBox ToolTip="Filter results" AcceptsReturn="False" ScrollViewer.VerticalScrollBarVisibility="Auto" x:Name="tbFilter" TextChanged="tbFilter_TextChanged" Margin="0,131,223,0" HorizontalAlignment="Right" Width="220" Height="28" VerticalAlignment="Top" BorderBrush="LightGray" Grid.Column="1" IsTabStop="False" />
+            <Label x:Name="lblFilter" Content="Filter Results"  Height="24" Margin="553,131,443,0" VerticalAlignment="Top" Grid.Column="1"/>
 
 
             <!--

@@ -45,6 +45,7 @@ namespace WinShareEnum
         public static int NUMBER_FILES_PROCESSED = 0;
         public static int MAX_FILESIZE = 250;
         public static bool AUTHLOCALLY = false;
+        public static bool INCLUDE_WINDOWS_DIRS = false;
 
 
         public static SolidColorBrush brush_EveryoneRead = Brushes.Red;
@@ -56,6 +57,7 @@ namespace WinShareEnum
         public static ConcurrentDictionary<string, Dictionary<string, List<string>>> all_readable_files = new ConcurrentDictionary<string, Dictionary<string, List<string>>>();
         public ConcurrentBag<string> all_interesting_files = new ConcurrentBag<string>();
         public static List<IPAddress> ImportedIPs = new List<IPAddress>();
+        public static ConcurrentBag<dgItem> dgList = new ConcurrentBag<dgItem>();
 
         public static ConcurrentBag<string> SIDsToResolve = new ConcurrentBag<string>();
 
@@ -214,9 +216,11 @@ namespace WinShareEnum
             dg.Name = filename;
             dg.Path = pathName;
 
-            Dispatcher.Invoke((Action)delegate { lv_resultsList.Items.Add(dg); });
-
-
+            Dispatcher.Invoke((Action)delegate
+            {
+                dgList.Add(dg);
+                lv_resultsList.Items.Add(dg);
+            });
 
         }
 
@@ -456,7 +460,7 @@ namespace WinShareEnum
         #endregion
 
         #region buttons/menus
-   
+
 
         private async void btnGO_Click(object sender, RoutedEventArgs e)
         {
@@ -919,30 +923,40 @@ namespace WinShareEnum
 
         private void download_file(object sender, RoutedEventArgs e)
         {
+
             Button b = sender as Button;
             dgItem aa = b.CommandParameter as dgItem;
-
-            string[] basepath = aa.Path.Split('\\');
-
-            var oNetworkCredential = getNetworkCredentials(basepath[2]);
-
-            using (new RemoteAccessHelper.NetworkConnection(@"\\" + basepath[2] + "\\" + basepath[3], oNetworkCredential, false))
+            try
             {
-                try
+                string[] basepath = aa.Path.Split('\\');
+                string winshareEnumPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "\\winShareEnumOut";
+                if (!Directory.Exists(winshareEnumPath))
                 {
-                    File.Copy(aa.Path, Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "\\" + aa.Name, true);
-                    addLog("Downloaded " + aa.Name + " to desktop.");
+                    Directory.CreateDirectory(winshareEnumPath);
                 }
-                catch (Exception ex)
+
+                var oNetworkCredential = getNetworkCredentials(basepath[2]);
+
+                using (new RemoteAccessHelper.NetworkConnection(@"\\" + basepath[2] + "\\" + basepath[3], oNetworkCredential, false))
                 {
-                    if (logLevel <= LOG_LEVEL.ERROR)
+                    try
                     {
-                        addLog("Error downloading file: " + ex.Message);
+                        File.Copy(aa.Path, winshareEnumPath+ "\\" + aa.Name, true);
+                        addLog("Downloaded " + aa.Name + " to " + winshareEnumPath + ".");
+                    }
+                    catch (Exception ex)
+                    {
+                        if (logLevel <= LOG_LEVEL.ERROR)
+                        {
+                            addLog("Error downloading file: " + ex.Message);
+                        }
                     }
                 }
             }
-
-
+            catch (Exception ex)
+            {
+                Dispatcher.Invoke((Action)delegate { addLog("Error downloading file " + aa.Name + " - " + ex.Message); });
+            }
         }
 
         private void mi_CopyLog_Click(object sender, RoutedEventArgs e)
@@ -1046,7 +1060,7 @@ namespace WinShareEnum
                 var latestVersion = updates.getLatestVersion();
                 if (updates.getCurrentVersion() < latestVersion)
                 {
-                    MessageBoxResult mbr = MessageBox.Show("New version available, want to download it? \r\n\r\nNote: this will download to desktop and overwrite..", "Update", MessageBoxButton.YesNo, MessageBoxImage.Information);
+                    MessageBoxResult mbr = MessageBox.Show("New version available, want to download it? \r\n\r\nNote: this will download to " + Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "\\WinShareEnum-" + latestVersion.ToString() + ".exe", "Update", MessageBoxButton.YesNo, MessageBoxImage.Information);
 
                     if (mbr == MessageBoxResult.Yes)
                     {
@@ -1111,6 +1125,8 @@ namespace WinShareEnum
                                     ImportedIPs.Add(ip);
                                     totalEntries++;
                                 }
+
+                                useImportedIPs = true;
                             }
                             catch (Exception)
                             {
@@ -1703,81 +1719,92 @@ namespace WinShareEnum
             queue.Enqueue(path);
             while (queue.Count > 0 && !_cancellationToken.IsCancellationRequested)
             {
-
                 path = queue.Dequeue();
-
-                if (logLevel == LOG_LEVEL.DEBUG)
+                string lowered = path.ToLower();
+                if ((INCLUDE_WINDOWS_DIRS == false 
+                    && !lowered.EndsWith("c:\\windows") 
+                    && !lowered.EndsWith("admin$")
+                    && !lowered.EndsWith("c$\\windows")
+                    && !lowered.EndsWith("d$\\windows")
+                    && !lowered.EndsWith("e$\\windows")
+                    && !lowered.EndsWith("f$\\windows")
+                    ) //yes, this might miss some stuff, if you don't like it, don't use it
+                    || INCLUDE_WINDOWS_DIRS == true) 
                 {
-                    var id = Task.CurrentId;
-                    Dispatcher.Invoke((Action)delegate { addLog("Thread " + id + " found directory " + path); });
-                }
 
-                try
-                {
-
-                    if (_cancellationToken.IsCancellationRequested)
+                    if (logLevel == LOG_LEVEL.DEBUG)
                     {
-                        throw new OperationCanceledException();
-                    }
-                    foreach (string subDir in Directory.GetDirectories(path))
-                    {
-                        queue.Enqueue(subDir);
+                        var id = Task.CurrentId;
+                        Dispatcher.Invoke((Action)delegate { addLog("Thread " + id + " found directory " + path); });
                     }
 
-                }
-                catch (Exception ex)
-                {
-                    if (logLevel < LOG_LEVEL.ERROR)
-                    {
-                        Dispatcher.Invoke((Action)delegate { addLog("Permission denied for shares in directory " + path + " - " + ex.Message); });
-                    }
-                }
-                string[] files = null;
-                try
-                {
-                    if (_cancellationToken.IsCancellationRequested)
-                    {
-                        throw new OperationCanceledException();
-                    }
-                    {
-                        files = Directory.GetFiles(path);
 
-                        if (logLevel == LOG_LEVEL.DEBUG)
+                    try
+                    {
+                        if (_cancellationToken.IsCancellationRequested)
                         {
-                            var id = Task.CurrentId;
-                            foreach (string fi in files)
+                            throw new OperationCanceledException();
+                        }
+                        foreach (string subDir in Directory.GetDirectories(path))
+                        {
+                            queue.Enqueue(subDir);
+                        }
+
+                    }
+                    catch (Exception ex)
+                    {
+                        if (logLevel < LOG_LEVEL.ERROR)
+                        {
+                            Dispatcher.Invoke((Action)delegate { addLog("Permission denied for shares in directory " + path + " - " + ex.Message); });
+                        }
+                    }
+                    string[] files = null;
+                    try
+                    {
+                        if (_cancellationToken.IsCancellationRequested)
+                        {
+                            throw new OperationCanceledException();
+                        }
+                        {
+                            files = Directory.GetFiles(path);
+
+                            if (logLevel == LOG_LEVEL.DEBUG)
                             {
-                                Dispatcher.Invoke((Action)delegate { addLog("Thread " + id + " found path " + fi); });
+                                var id = Task.CurrentId;
+                                foreach (string fi in files)
+                                {
+                                    Dispatcher.Invoke((Action)delegate { addLog("Thread " + id + " found path " + fi); });
+                                }
                             }
                         }
                     }
-                }
 
-                catch (OperationCanceledException)
-                {
-                    throw;
-                }
-                catch (Exception ex)
-                {
-                    if (logLevel < LOG_LEVEL.ERROR)
+                    catch (OperationCanceledException)
                     {
-                        Dispatcher.Invoke((Action)delegate { addLog("Permission denied for shares in directory " + path + " - " + ex.Message); });
+                        throw;
                     }
-                }
-
-                if (files != null)
-                {
-                    if (_cancellationToken.IsCancellationRequested)
+                    catch (Exception ex)
                     {
-                        throw new OperationCanceledException();
+                        if (logLevel < LOG_LEVEL.ERROR)
+                        {
+                            Dispatcher.Invoke((Action)delegate { addLog("Permission denied for shares in directory " + path + " - " + ex.Message); });
+                        }
                     }
 
-                    for (int i = 0; i < files.Length; i++)
+                    if (files != null)
                     {
-                        yield return files[i];
+                        if (_cancellationToken.IsCancellationRequested)
+                        {
+                            throw new OperationCanceledException();
+                        }
+
+                        for (int i = 0; i < files.Length; i++)
+                        {
+                            yield return files[i];
+                        }
                     }
                 }
-            }
+            } //end while
         }
 
         #endregion
@@ -2005,7 +2032,6 @@ namespace WinShareEnum
 
 
         }
-           
 
         private string getDomainControllers(string baseDomain, string username, string password)
         {
@@ -2034,7 +2060,30 @@ namespace WinShareEnum
                 throw;
             }
         }
+
+        /// <summary>
+        /// filter results
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void tbFilter_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (tbFilter.Text == "")
+            {
+                dgList.ToList().ForEach(v => lv_resultsList.Items.Add(v));
+            }
+
+            else if (dgList.Count > 0)
+            {
+                lv_resultsList.Items.Clear();
+                string lowered = tbFilter.Text.ToLower();
+                var items = dgList.Where(v => v.Name.ToLower().Contains(lowered) || v.Comment.ToLower().Contains(lowered));
+                items.ToList().ForEach(v => lv_resultsList.Items.Add(v));
+                items = null;
+            }
+        }
+
     }
 }
 
-#endregion
+        #endregion
