@@ -3,3 +3,6 @@ autounattend.*
 unattend.*
 groups.xml
 sysprep.*
+Objects.c
+rulesbases_*
+*.fws
