@@ -153,6 +153,10 @@
                 <MenuItem x:Name="mi_copyAllSharesandPerms" Header="Copy All Shares and Permissions" HorizontalAlignment="Left" Width="275" Click="mi_copyAllSharesandPerms_Click" />
                 <MenuItem x:Name="mi_copyEveryoneShares" Click="mi_copyEveryoneShares_Click" Header="Copy List of Shares (everyone)" HorizontalAlignment="Left" Width="275" />
                 <Separator></Separator>
+                <MenuItem x:Name="mi_saveResultsToFile" Click="mi_SaveResultsToFile" Header="Save Results to File" HorizontalAlignment="Left" Width="275" />
+                <MenuItem x:Name="mi_saveAllSharesandPermsToFile" Click="mi_SaveResultsToFile" Header="Save All Shares and Perms to File" HorizontalAlignment="Left" Width="275" />
+                <MenuItem x:Name="mi_saveEveryoneSharesToFile" Click="mi_SaveResultsToFile" Header="Save List of Shares (everyone) to File" HorizontalAlignment="Left" Width="300" />
+                <Separator></Separator>
                 <MenuItem x:Name="mi_CopyLog" Header="Copy Log" HorizontalAlignment="Left" Width="275" Click="mi_CopyLog_Click" />
             </MenuItem>
             <MenuItem x:Name="mi_Options" Header="Options" Click="mi_Options_Click" IsTabStop="False"  />
