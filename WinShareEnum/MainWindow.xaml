@@ -251,7 +251,7 @@
             <Button x:Name="btn_clearResults" Content="Clear Results" Height="16" Margin="371,0,0,129" VerticalAlignment="Bottom" HorizontalAlignment="Left" Width="128"  Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" Background="{x:Null}" BorderBrush="LightGray" FontSize="8" Opacity="0.8" IsEnabled="True" Grid.Column="1" Click="btn_clearResults_Click" IsTabStop="False" />
             <TextBox ToolTip="Filter results" AcceptsReturn="False" ScrollViewer.VerticalScrollBarVisibility="Auto" x:Name="tbFilter" TextChanged="tbFilter_TextChanged" Margin="0,131,223,0" HorizontalAlignment="Right" Width="220" Height="28" VerticalAlignment="Top" BorderBrush="LightGray" Grid.Column="1" IsTabStop="False" />
             <Label x:Name="lblFilter" Content="Filter Results"  Height="24" Margin="553,131,443,0" VerticalAlignment="Top" Grid.Column="1"/>
-            <TextBox x:Name="tbTimeout" Grid.Column="1" HorizontalAlignment="Left" Height="23" Margin="941.667,137,0,0" TextWrapping="Wrap" Text="" TextChanged="timeout_Change" VerticalAlignment="Top" Width="120"/>
+            <TextBox x:Name="tbTimeout" Grid.Column="1" Height="23" Margin="941.667,137,0,0" TextWrapping="Wrap" Text="15" TextChanged="timeout_Change" VerticalAlignment="Top" HorizontalAlignment="Left" Width="120"/>
             <TextBlock HorizontalAlignment="Left" TextWrapping="Wrap" Text="Timeout" VerticalAlignment="Top" Grid.Column="1" Margin="887.667,140,0,0"/>
 
 

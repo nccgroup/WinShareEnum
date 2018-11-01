@@ -144,7 +144,7 @@ namespace WinShareEnum
             // Do Timeout Change
             if(int.TryParse(tbTimeout.Text,out temp))
             {
-                TIMEOUT = temp;
+                TIMEOUT = temp * 1000;
             } else {
                 System.Windows.MessageBox.Show("Timeout Must be a whole integer.", "Error");
                 tbTimeout.Text = "";
@@ -471,7 +471,10 @@ namespace WinShareEnum
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             //update the "path" column so it is always stretched,  like lindsay lohan
-            gvtest.Columns[3].Width = gb_EnumResults.ActualWidth - gvtest.Columns[0].Width - gvtest.Columns[1].Width - gvtest.Columns[2].Width;
+            // Bug fix, if you resize the window too small the whole thing crashes
+            if (gvtest.Columns[3].Width > 0) {
+                gvtest.Columns[3].Width = gb_EnumResults.ActualWidth - gvtest.Columns[0].Width - gvtest.Columns[1].Width - gvtest.Columns[2].Width;
+            }
         }
 
         #endregion
@@ -1952,7 +1955,7 @@ namespace WinShareEnum
                 {
                     if (Path.GetExtension(lowered) == interesting.TrimStart('*'))
                     {
-                        addToResultsList(filePath, shortFileName, "extension rule matched (" + interesting + ")");
+                        addToResultsList(filePath, shortFileName, "Extension rule matched (" + interesting + ")");
                         Dispatcher.Invoke((Action)delegate { addLog("Interesting file found - " + shortFileName + " (" + shortFileName + ")"); });
                         return;
                     }
@@ -1965,7 +1968,7 @@ namespace WinShareEnum
                     string bb = interesting.TrimEnd('*').TrimEnd('.');
                     if (Path.GetFileNameWithoutExtension(lowered) == interesting.TrimEnd('*').TrimEnd('.'))
                     {
-                        addToResultsList(filePath, shortFileName, "wildcard extension rule matched (" + interesting + ")");
+                        addToResultsList(filePath, shortFileName, "Wildcard extension rule matched (" + interesting + ")");
                         Dispatcher.Invoke((Action)delegate { addLog("Interesting file found - " + shortFileName + " (" + shortFileName + ")"); });
                         return;
                     }
@@ -1978,7 +1981,7 @@ namespace WinShareEnum
                     {
                         if (System.Text.RegularExpressions.Regex.IsMatch(shortFileName, interesting.TrimStart('#'), System.Text.RegularExpressions.RegexOptions.IgnoreCase))
                         {
-                            addToResultsList(filePath, shortFileName, "regex matched (" + interesting.TrimStart('#') + ")");
+                            addToResultsList(filePath, shortFileName, "Regex matched (" + interesting.TrimStart('#') + ")");
                             Dispatcher.Invoke((Action)delegate { addLog("Interesting file found - " + shortFileName + " (" + shortFileName + ")"); });
                             return;
                         }
