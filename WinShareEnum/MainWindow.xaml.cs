@@ -42,7 +42,7 @@ namespace WinShareEnum
 
         public const int ICON_HEIGHT = 15;
         public const int ICON_WIDTH = 18;
-        public const int TIMEOUT = 15000;
+        public static int TIMEOUT = 15000;
         public static int NUMBER_FILES_PROCESSED = 0;
         public static int MAX_FILESIZE = 250;
         public static bool AUTHLOCALLY = false;
@@ -132,6 +132,22 @@ namespace WinShareEnum
             if (tbUsername.Text != "")
             {
                 USERNAME = tbUsername.Text;
+            }
+        }
+
+        private void timeout_Change(object sender, TextChangedEventArgs e)
+        {
+            if (tbTimeout.Text == "")
+                return;
+            
+            int temp;
+            // Do Timeout Change
+            if(int.TryParse(tbTimeout.Text,out temp))
+            {
+                TIMEOUT = temp;
+            } else {
+                System.Windows.MessageBox.Show("Timeout Must be a whole integer.", "Error");
+                tbTimeout.Text = "";
             }
         }
 
@@ -1251,7 +1267,7 @@ namespace WinShareEnum
             try
             {
                 //auth to server, we do want to timeout on discovery
-                using (new RemoteAccessHelper.NetworkConnection(@"\\" + ServerName, oNetworkCredential, true))
+                using(new RemoteAccessHelper.NetworkConnection(@"\\" + ServerName, oNetworkCredential, true))
                 {
                     WinNetworking _getNetworkShares = new WinNetworking();
 
