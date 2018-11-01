@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Windows.Forms;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -41,7 +42,7 @@ namespace WinShareEnum
 
         public const int ICON_HEIGHT = 15;
         public const int ICON_WIDTH = 18;
-        public const int TIMEOUT = 15000;
+        public static int TIMEOUT = 15000;
         public static int NUMBER_FILES_PROCESSED = 0;
         public static int MAX_FILESIZE = 250;
         public static bool AUTHLOCALLY = false;
@@ -120,7 +121,7 @@ namespace WinShareEnum
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Windows.MessageBox.Show("Error " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -131,6 +132,22 @@ namespace WinShareEnum
             if (tbUsername.Text != "")
             {
                 USERNAME = tbUsername.Text;
+            }
+        }
+
+        private void timeout_Change(object sender, TextChangedEventArgs e)
+        {
+            if (tbTimeout.Text == "")
+                return;
+            
+            int temp;
+            // Do Timeout Change
+            if(int.TryParse(tbTimeout.Text,out temp))
+            {
+                TIMEOUT = temp * 1000;
+            } else {
+                System.Windows.MessageBox.Show("Timeout Must be a whole integer.", "Error");
+                tbTimeout.Text = "";
             }
         }
 
@@ -333,7 +350,7 @@ namespace WinShareEnum
             if (canEveryoneRead == true)
             {
                 StackPanel holder = new StackPanel();
-                holder.Orientation = Orientation.Horizontal;
+                holder.Orientation = System.Windows.Controls.Orientation.Horizontal;
                 holder.Children.Add(new Image() { Source = new BitmapImage(new Uri("pack://application:,,,/Resources/low.png")), Height = ICON_HEIGHT, Width = ICON_WIDTH });
                 holder.Children.Add(new TextBlock() { Text = ti.Header.ToString(), VerticalAlignment = VerticalAlignment.Center });
 
@@ -345,7 +362,7 @@ namespace WinShareEnum
             {
                 ti.Foreground = brush_currentUserRead;
                 StackPanel holder = new StackPanel();
-                holder.Orientation = Orientation.Horizontal;
+                holder.Orientation = System.Windows.Controls.Orientation.Horizontal;
                 holder.Children.Add(new Image() { Source = new BitmapImage(new Uri("pack://application:,,,/Resources/info.png")), Height = ICON_HEIGHT, Width = ICON_WIDTH });
                 holder.Children.Add(new TextBlock() { Text = ti.Header.ToString(), VerticalAlignment = VerticalAlignment.Center });
 
@@ -361,7 +378,7 @@ namespace WinShareEnum
             Dispatcher.Invoke((Action)delegate { lbl_fileCount.Content = "Files Processed: " + NUMBER_FILES_PROCESSED; });
         }
 
-        private void SetGlowVisibility(ProgressBar progressBar, Visibility visibility)
+        private void SetGlowVisibility(System.Windows.Controls.ProgressBar progressBar, Visibility visibility)
         {
             var glow = progressBar.Template.FindName("PART_GlowRect", progressBar) as FrameworkElement;
             if (glow != null) glow.Visibility = visibility;
@@ -374,7 +391,7 @@ namespace WinShareEnum
 
                 TreeViewItem item = treeviewMain.SelectedItem as TreeViewItem;
 
-                TreeView tv = (TreeView)sender;
+                System.Windows.Controls.TreeView tv = (System.Windows.Controls.TreeView)sender;
                 TreeViewItem child = (TreeViewItem)tv.SelectedItem;
 
                 if (child.Parent.GetType() == typeof(TreeViewItem))
@@ -454,7 +471,10 @@ namespace WinShareEnum
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             //update the "path" column so it is always stretched,  like lindsay lohan
-            gvtest.Columns[3].Width = gb_EnumResults.ActualWidth - gvtest.Columns[0].Width - gvtest.Columns[1].Width - gvtest.Columns[2].Width;
+            // Bug fix, if you resize the window too small the whole thing crashes
+            if (gvtest.Columns[3].Width > 0) {
+                gvtest.Columns[3].Width = gb_EnumResults.ActualWidth - gvtest.Columns[0].Width - gvtest.Columns[1].Width - gvtest.Columns[2].Width;
+            }
         }
 
         #endregion
@@ -658,7 +678,7 @@ namespace WinShareEnum
 
                     btnGO.Visibility = Visibility.Visible;
                     pgbMain.Visibility = Visibility.Hidden;
-                    MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                    System.Windows.MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Exclamation);
 
                     if (logLevel < LOG_LEVEL.INFO)
                     {
@@ -675,14 +695,14 @@ namespace WinShareEnum
 
         private void mi_Options_Click(object sender, RoutedEventArgs e)
         {
-            if (Application.Current.Windows.Count == 1)
+            if (System.Windows.Application.Current.Windows.Count == 1)
             {
                 options o = new options();
                 o.Show();
             }
             else
             {
-                foreach (Window w in Application.Current.Windows)
+                foreach (Window w in System.Windows.Application.Current.Windows)
                 {
                     if (!w.IsActive)
                     {
@@ -776,7 +796,7 @@ namespace WinShareEnum
                 else
                 {
                     pgbMain.Visibility = Visibility.Hidden;
-                    MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                    System.Windows.MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Exclamation);
 
                     if (logLevel < LOG_LEVEL.INFO)
                     {
@@ -861,7 +881,7 @@ namespace WinShareEnum
                 }
 
                 pgbMain.Visibility = Visibility.Hidden;
-                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+                System.Windows.MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Exclamation);
 
                 if (logLevel < LOG_LEVEL.INFO)
                 {
@@ -904,12 +924,12 @@ namespace WinShareEnum
                 }
             }
 
-            Clipboard.SetText(sb.ToString());
+            System.Windows.Clipboard.SetText(sb.ToString());
         }
 
         private void btn_Stop_Click(object sender, RoutedEventArgs e)
         {
-            MessageBoxResult result = MessageBox.Show("Really Stop?", "Stop", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            MessageBoxResult result = System.Windows.MessageBox.Show("Really Stop?", "Stop", MessageBoxButton.YesNo, MessageBoxImage.Question);
 
             if (result == MessageBoxResult.Yes)
             {
@@ -924,7 +944,7 @@ namespace WinShareEnum
         private void download_file(object sender, RoutedEventArgs e)
         {
 
-            Button b = sender as Button;
+            System.Windows.Controls.Button b = sender as System.Windows.Controls.Button;
             dgItem aa = b.CommandParameter as dgItem;
             try
             {
@@ -967,7 +987,7 @@ namespace WinShareEnum
             {
                 sb.Append(s + "\r\n");
             }
-            Clipboard.SetText(sb.ToString());
+            System.Windows.Clipboard.SetText(sb.ToString());
         }
 
         private void mi_copyEveryoneShares_Click(object sender, RoutedEventArgs e)
@@ -993,7 +1013,7 @@ namespace WinShareEnum
                     }
                 }
             }
-            Clipboard.SetText(sb.ToString());
+            System.Windows.Clipboard.SetText(sb.ToString());
         }
 
         private void mi_CopyResultsPane_Click(object sender, RoutedEventArgs e)
@@ -1003,12 +1023,12 @@ namespace WinShareEnum
             {
                 sb.Append(item.Path + "\t\t" + item.Comment + "\r\n");
             }
-            Clipboard.SetText(sb.ToString());
+            System.Windows.Clipboard.SetText(sb.ToString());
         }
 
         private void mi_version_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("Windows Share Enumerator\r\nVersion: " + updates.getCurrentVersion().ToString() + "\r\nJonathan.Murray@nccgroup.com", "About", MessageBoxButton.OK, MessageBoxImage.Information);
+            System.Windows.MessageBox.Show("Windows Share Enumerator\r\nVersion: " + updates.getCurrentVersion().ToString() + "\r\nJonathan.Murray@nccgroup.com", "About", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void mi_updateRules_Click(object sender, RoutedEventArgs e)
@@ -1041,11 +1061,11 @@ namespace WinShareEnum
                 }
 
                 Settings.Default.Save();
-                MessageBox.Show("Rules update complete. " + count + " new rules added.", "Update", MessageBoxButton.OK, MessageBoxImage.Information);
+                System.Windows.MessageBox.Show("Rules update complete. " + count + " new rules added.", "Update", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error updating rules. " + ex.Message, "Update Rules Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Windows.MessageBox.Show("Error updating rules. " + ex.Message, "Update Rules Failed", MessageBoxButton.OK, MessageBoxImage.Error);
                 addLog("Error " + ex.Message + " -- " + ex.StackTrace);
             }
 
@@ -1060,7 +1080,7 @@ namespace WinShareEnum
                 var latestVersion = updates.getLatestVersion();
                 if (updates.getCurrentVersion() < latestVersion)
                 {
-                    MessageBoxResult mbr = MessageBox.Show("New version available, want to download it? \r\n\r\nNote: this will download to " + Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "\\WinShareEnum-" + latestVersion.ToString() + ".exe", "Update", MessageBoxButton.YesNo, MessageBoxImage.Information);
+                    MessageBoxResult mbr = System.Windows.MessageBox.Show("New version available, want to download it? \r\n\r\nNote: this will download to " + Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "\\WinShareEnum-" + latestVersion.ToString() + ".exe", "Update", MessageBoxButton.YesNo, MessageBoxImage.Information);
 
                     if (mbr == MessageBoxResult.Yes)
                     {
@@ -1071,20 +1091,20 @@ namespace WinShareEnum
                         }
                         catch (Exception ex)
                         {
-                            MessageBox.Show("Error: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            System.Windows.MessageBox.Show("Error: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                             addLog("Error " + ex.Message + " -- " + ex.StackTrace);
                         }
                     }
                 }
                 else
                 {
-                    MessageBox.Show("No New Version Available", "Update", MessageBoxButton.OK, MessageBoxImage.Information);
+                    System.Windows.MessageBox.Show("No New Version Available", "Update", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
 
             catch (Exception ex)
             {
-                MessageBox.Show("Error getting current version. " + ex.Message, "Update Rules Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Windows.MessageBox.Show("Error getting current version. " + ex.Message, "Update Rules Failed", MessageBoxButton.OK, MessageBoxImage.Error);
                 addLog("Error " + ex.Message + " -- " + ex.StackTrace);
             }
         }
@@ -1148,6 +1168,89 @@ namespace WinShareEnum
 
         }
 
+        private void mi_SaveResultsToFile(object sender, RoutedEventArgs e)
+        {
+            // Map the clicked entry
+            System.Windows.Controls.MenuItem clicked = (System.Windows.Controls.MenuItem)sender;
+
+            // Just incase something really bad happens
+            if (clicked == null)
+            {
+                addLog("That was a bad menuItem press.. Tut Tut");
+                return;
+            }
+
+            // Get the file path
+            SaveFileDialog saveFileDialog_res = new SaveFileDialog();
+            saveFileDialog_res.Title = "Save Results to File";
+            saveFileDialog_res.ShowDialog();
+
+            if(saveFileDialog_res.FileName != "")
+            {
+                // Open the file
+                using (System.IO.StreamWriter fs = new System.IO.StreamWriter(saveFileDialog_res.FileName + ".txt", true))
+                {
+                    // switch case for different saves
+                    // Basically just used the code from copy to clipboard for this
+                    switch (clicked.Name)
+                    {
+                        case "mi_saveResultsToFile":
+                            foreach (dgItem item in lv_resultsList.Items)
+                            {
+                                fs.WriteLine(item);
+                            }
+                            break;
+                        case "mi_saveAllSharesandPermsToFile":
+                            foreach (string key in all_readable_shares.Keys)
+                            {
+                                foreach (shareStruct ss in all_readable_shares[key])
+                                {
+                                    fs.Write("\r\n\r\n\r\n" + @"\\" + key + "\\" + ss.shareName + ":" + "\r\n");
+
+                                    foreach (FileSystemAccessRule fas in ss.permissionsList)
+                                    {
+                                        if (resolveGroupSIDs == true && SIDsDict.ContainsKey(fas.IdentityReference.Value))
+                                        {
+                                            fs.Write("\r\n\r\n\t- " + SIDsDict[fas.IdentityReference.Value]);
+                                        }
+                                        else
+                                        {
+                                            fs.Write("\r\n\r\n\t- " + fas.IdentityReference.ToString());
+                                        }
+                                        fs.Write("\r\n\t\t--" + MapGenericRightsToFileSystemRights(fas.FileSystemRights));
+                                    }
+                                }
+                            }
+                            break;
+                        case "mi_saveEveryoneSharesToFile":
+                            foreach (List<shareStruct> ssList in all_readable_shares.Values)
+                            {
+                                foreach (shareStruct ss in ssList)
+                                {
+                                    if (ss.everyoneCanRead == true)
+                                    {
+                                        fs.Write("\r\n\r\n" + @"\\" + ss.ipAddressHostname + "\\" + ss.shareName + ":");
+                                        foreach (FileSystemAccessRule fas in ss.permissionsList)
+                                        {
+                                            if (fas.IdentityReference.ToString().ToLower() == "everyone")
+                                            {
+                                                fs.Write("\r\n\t- " + fas.IdentityReference.ToString());
+                                                fs.Write("\r\n\t\t--" + MapGenericRightsToFileSystemRights(fas.FileSystemRights));
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+                    // Clean up
+                    fs.Close();
+                }
+            }
+        }
+        
 
 
         #endregion
@@ -1167,7 +1270,7 @@ namespace WinShareEnum
             try
             {
                 //auth to server, we do want to timeout on discovery
-                using (new RemoteAccessHelper.NetworkConnection(@"\\" + ServerName, oNetworkCredential, true))
+                using(new RemoteAccessHelper.NetworkConnection(@"\\" + ServerName, oNetworkCredential, true))
                 {
                     WinNetworking _getNetworkShares = new WinNetworking();
 
@@ -1852,7 +1955,7 @@ namespace WinShareEnum
                 {
                     if (Path.GetExtension(lowered) == interesting.TrimStart('*'))
                     {
-                        addToResultsList(filePath, shortFileName, "extension rule matched (" + interesting + ")");
+                        addToResultsList(filePath, shortFileName, "Extension rule matched (" + interesting + ")");
                         Dispatcher.Invoke((Action)delegate { addLog("Interesting file found - " + shortFileName + " (" + shortFileName + ")"); });
                         return;
                     }
@@ -1865,7 +1968,7 @@ namespace WinShareEnum
                     string bb = interesting.TrimEnd('*').TrimEnd('.');
                     if (Path.GetFileNameWithoutExtension(lowered) == interesting.TrimEnd('*').TrimEnd('.'))
                     {
-                        addToResultsList(filePath, shortFileName, "wildcard extension rule matched (" + interesting + ")");
+                        addToResultsList(filePath, shortFileName, "Wildcard extension rule matched (" + interesting + ")");
                         Dispatcher.Invoke((Action)delegate { addLog("Interesting file found - " + shortFileName + " (" + shortFileName + ")"); });
                         return;
                     }
@@ -1878,7 +1981,7 @@ namespace WinShareEnum
                     {
                         if (System.Text.RegularExpressions.Regex.IsMatch(shortFileName, interesting.TrimStart('#'), System.Text.RegularExpressions.RegexOptions.IgnoreCase))
                         {
-                            addToResultsList(filePath, shortFileName, "regex matched (" + interesting.TrimStart('#') + ")");
+                            addToResultsList(filePath, shortFileName, "Regex matched (" + interesting.TrimStart('#') + ")");
                             Dispatcher.Invoke((Action)delegate { addLog("Interesting file found - " + shortFileName + " (" + shortFileName + ")"); });
                             return;
                         }
